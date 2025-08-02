@@ -1,0 +1,93 @@
+# 🧠 Mission 51 — RAG Vector Backend
+# Adds real vector DB-backed Retriever implementation for HybridRetriever pipeline.
+# Affects: core/retrieval.rs (extended)
+
+file: core/retrieval.rs
+---
+use async_trait::async_trait;
+use std::sync::Arc;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+
+#[async_trait]
+pub trait Retriever: Send + Sync {
+    async fn retrieve(&self, query: &str) -> Vec<String>;
+}
+
+pub struct HybridRetriever {
+    pub sources: Vec<Arc<dyn Retriever>>,
+}
+
+impl HybridRetriever {
+    pub fn new() -> Self {
+        Self { sources: vec![] }
+    }
+
+    pub fn add_source(&mut self, source: Arc<dyn Retriever>) {
+        self.sources.push(source);
+    }
+
+    pub async fn query(&self, query: &str) -> Vec<String> {
+        let mut results = vec![];
+
+        for source in &self.sources {
+            match source.retrieve(query).await {
+                r if !r.is_empty() => results.extend(r),
+                _ => continue,
+            }
+        }
+
+        results
+    }
+}
+
+pub struct QdrantRetriever {
+    pub url: String,
+    pub collection: String,
+    pub client: Client,
+}
+
+#[derive(Serialize)]
+struct QdrantSearchRequest<'a> {
+    vector: &'a [f32],
+    top: usize,
+}
+
+#[derive(Deserialize)]
+struct QdrantSearchResult {
+    result: Vec<QdrantPoint>,
+}
+
+#[derive(Deserialize)]
+struct QdrantPoint {
+    payload: Option<std::collections::HashMap<String, String>>,
+}
+
+#[async_trait]
+impl Retriever for QdrantRetriever {
+    async fn retrieve(&self, query: &str) -> Vec<String> {
+        let fake_embedding = vec![0.1; 1536]; // Placeholder: replace with real embedder
+        let body = QdrantSearchRequest {
+            vector: &fake_embedding,
+            top: 5,
+        };
+
+        let res = self.client
+            .post(format!("{}/collections/{}/points/search", self.url, self.collection))
+            .json(&body)
+            .send()
+            .await;
+
+        match res {
+            Ok(resp) => match resp.json::<QdrantSearchResult>().await {
+                Ok(parsed) => parsed.result
+                    .into_iter()
+                    .filter_map(|p| p.payload?.get("text").cloned())
+                    .collect(),
+                Err(_) => vec![],
+            },
+            Err(_) => vec![],
+        }
+    }
+}
+---

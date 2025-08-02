@@ -1,0 +1,43 @@
+# 20-ci-pipeline.yaml
+description: |
+  Sets up the base CI pipeline for build, test, lint, and mission validation.
+
+tasks:
+  - op: create
+    file: .github/workflows/ci.yml
+    edit: |
+      name: RustChain CI
+
+      on:
+        push:
+          branches: [ main ]
+        pull_request:
+          branches: [ main ]
+
+      jobs:
+        build-test:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v3
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                toolchain: stable
+                override: true
+
+            - name: Run Format Check
+              run: cargo fmt --all -- --check
+
+            - name: Run Clippy Lint
+              run: cargo clippy --all-targets -- -D warnings
+
+            - name: Run Unit Tests
+              run: cargo test --all-features
+
+            - name: Run Replay Tests
+              run: |
+                for file in $(find tests/replay -name '*.yaml'); do
+                  echo "▶ Replaying $file"
+                  cargo run --bin rustchain -- --replay "$file"
+                done

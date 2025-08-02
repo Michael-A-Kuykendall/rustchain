@@ -1,0 +1,86 @@
+# 📡 Mission 28 — Telemetry Hooks
+# Adds global telemetry sink and hooks for tool/agent events.
+# Affects: core/telemetry.rs, core/tools.rs, engine/context.rs, lib.rs
+
+file: core/telemetry.rs
+---
+use std::sync::Arc;
+
+#[derive(Debug, Clone)]
+pub enum TelemetryEvent {
+    ToolInvoked { name: String, input: String },
+    ToolResult { name: String, output: String },
+    AgentStarted { id: String },
+    AgentFinished { id: String },
+    MissionStarted { name: String },
+    MissionCompleted { name: String },
+    MissionFailed { name: String, error: String },
+}
+
+pub trait TelemetrySink: Send + Sync {
+    fn emit(&self, event: TelemetryEvent);
+}
+
+pub struct StdoutSink;
+
+impl TelemetrySink for StdoutSink {
+    fn emit(&self, event: TelemetryEvent) {
+        println!("[telemetry] {:?}", event);
+    }
+}
+---
+
+file: core/tools.rs
+---
+use crate::core::telemetry::{TelemetryEvent, TelemetrySink};
+use crate::engine::context::RuntimeContext;
+
+pub async fn call_tool_with_telemetry(
+    ctx: &RuntimeContext,
+    agent_id: &str,
+    tool_name: &str,
+    input: &str
+) -> String {
+    ctx.telemetry_sink.emit(TelemetryEvent::ToolInvoked {
+        name: tool_name.to_string(),
+        input: input.to_string(),
+    });
+
+    let result = match get_tool(tool_name).await {
+        Some(tool) => tool.call(input).await,
+        None => format!("Tool not found: {}", tool_name),
+    };
+
+    ctx.telemetry_sink.emit(TelemetryEvent::ToolResult {
+        name: tool_name.to_string(),
+        output: result.clone(),
+    });
+
+    result
+}
+---
+
+file: engine/context.rs
+---
+use crate::core::telemetry::{TelemetrySink, StdoutSink};
+use std::sync::Arc;
+
+pub struct RuntimeContext {
+    pub telemetry_sink: Arc<dyn TelemetrySink>,
+    // existing fields...
+}
+
+impl RuntimeContext {
+    pub fn new() -> Self {
+        Self {
+            telemetry_sink: Arc::new(StdoutSink),
+            // existing init...
+        }
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod telemetry;
+---

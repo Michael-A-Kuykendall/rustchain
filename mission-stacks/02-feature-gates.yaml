@@ -1,0 +1,35 @@
+# 02-feature-gates.yaml
+description: |
+  Adds modular feature gates to lib.rs so that crate components can be conditionally compiled.
+  This prepares the project for safe selective testing and composition.
+
+tasks:
+  - op: edit
+    file: src/lib.rs
+    edit: |
+      #[cfg(feature = "llm")]
+      pub mod llm;
+
+      #[cfg(feature = "tools")]
+      pub mod tools;
+
+      #[cfg(feature = "rag")]
+      pub mod rag;
+
+      #[cfg(feature = "memory")]
+      pub mod memory;
+
+      #[cfg(feature = "chain")]
+      pub mod chain;
+
+      #[cfg(feature = "agent")]
+      pub mod agent;
+
+      #[cfg(feature = "cli")]
+      pub mod cli;
+
+      #[cfg(feature = "concurrency")]
+      pub mod concurrency;
+
+      #[cfg(feature = "invariants")]
+      pub mod testing;

@@ -1,0 +1,66 @@
+# 🧠 Mission 50 — Model Management
+# Adds lifecycle control, model metadata, and switching logic to model manager.
+# Affects: core/model_manager.rs
+
+file: core/model_manager.rs
+---
+use std::collections::HashMap;
+use std::sync::Arc;
+use async_trait::async_trait;
+use crate::core::llm::LLMBackend;
+
+#[derive(Clone)]
+pub struct ModelMetadata {
+    pub name: String,
+    pub tags: Vec<String>,
+    pub version: Option<String>,
+    pub active: bool,
+}
+
+#[async_trait]
+pub trait ModelManager: Send + Sync {
+    async fn get_model(&self, name: &str) -> Option<Arc<dyn LLMBackend>>;
+    async fn register_model(&mut self, name: String, model: Arc<dyn LLMBackend>, metadata: ModelMetadata);
+    async fn list_models(&self) -> Vec<ModelMetadata>;
+    async fn activate(&mut self, name: &str);
+}
+
+pub struct DefaultModelManager {
+    models: HashMap<String, Arc<dyn LLMBackend>>,
+    metadata: HashMap<String, ModelMetadata>,
+}
+
+impl DefaultModelManager {
+    pub fn new() -> Self {
+        Self {
+            models: HashMap::new(),
+            metadata: HashMap::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl ModelManager for DefaultModelManager {
+    async fn get_model(&self, name: &str) -> Option<Arc<dyn LLMBackend>> {
+        self.models.get(name).cloned()
+    }
+
+    async fn register_model(&mut self, name: String, model: Arc<dyn LLMBackend>, metadata: ModelMetadata) {
+        self.models.insert(name.clone(), model);
+        self.metadata.insert(name, metadata);
+    }
+
+    async fn list_models(&self) -> Vec<ModelMetadata> {
+        self.metadata.values().cloned().collect()
+    }
+
+    async fn activate(&mut self, name: &str) {
+        for meta in self.metadata.values_mut() {
+            meta.active = false;
+        }
+        if let Some(meta) = self.metadata.get_mut(name) {
+            meta.active = true;
+        }
+    }
+}
+---

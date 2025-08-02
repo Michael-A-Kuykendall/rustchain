@@ -1,0 +1,77 @@
+# 🧾 Mission 35 — Error Audit Logging (Tamper-Evident)
+# Adds chained error log with hash-linked entries.
+# Affects: core/audit.rs, engine/context.rs, lib.rs
+
+file: core/audit.rs
+---
+use sha2::{Sha256, Digest};
+use chrono::{Utc};
+use std::fmt;
+
+#[derive(Clone)]
+pub struct AuditLogEntry {
+    pub timestamp: String,
+    pub agent_id: String,
+    pub error_type: String,
+    pub message: String,
+    pub prev_hash: String,
+    pub hash: String,
+}
+
+impl AuditLogEntry {
+    pub fn new(agent_id: &str, error_type: &str, message: &str, prev_hash: &str) -> Self {
+        let timestamp = Utc::now().to_rfc3339();
+        let payload = format!("{}{}{}{}{}", timestamp, agent_id, error_type, message, prev_hash);
+        let hash = format!("{:x}", Sha256::digest(payload.as_bytes()));
+
+        Self {
+            timestamp,
+            agent_id: agent_id.to_string(),
+            error_type: error_type.to_string(),
+            message: message.to_string(),
+            prev_hash: prev_hash.to_string(),
+            hash,
+        }
+    }
+}
+
+pub struct AuditLogStore {
+    pub entries: Vec<AuditLogEntry>,
+}
+
+impl AuditLogStore {
+    pub fn new() -> Self {
+        Self { entries: vec![] }
+    }
+
+    pub fn record(&mut self, agent_id: &str, error_type: &str, message: &str) {
+        let prev_hash = self.entries.last().map(|e| &e.hash).cloned().unwrap_or_default();
+        let entry = AuditLogEntry::new(agent_id, error_type, message, &prev_hash);
+        self.entries.push(entry);
+    }
+}
+---
+
+file: engine/context.rs
+---
+use crate::core::audit::AuditLogStore;
+
+pub struct RuntimeContext {
+    pub audit_log: AuditLogStore,
+    // existing fields...
+}
+
+impl RuntimeContext {
+    pub fn new() -> Self {
+        Self {
+            audit_log: AuditLogStore::new(),
+            // existing init...
+        }
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod audit;
+---

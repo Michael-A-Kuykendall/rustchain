@@ -1,0 +1,44 @@
+# 08-agent-loop.yaml
+description: |
+  Implements a basic agent loop that uses memory, tools, and an LLM to iteratively decide and act.
+  Interfaces with previously defined MemoryStore, ToolRegistry, and LLMBackend.
+
+tasks:
+  - op: create
+    file: src/core/agent.rs
+    edit: |
+      use crate::core::error::RustChainError;
+      use crate::core::llm::LLMBackend;
+      use crate::core::memory::MemoryStore;
+      use crate::core::tools::{ToolRegistry, ToolResult};
+      use async_trait::async_trait;
+
+      pub struct Agent<'a> {
+          pub name: String,
+          pub memory: &'a mut dyn MemoryStore,
+          pub tools: &'a ToolRegistry,
+          pub llm: &'a dyn LLMBackend,
+      }
+
+      impl<'a> Agent<'a> {
+          pub async fn run(&mut self, input: &str) -> Result<String, RustChainError> {
+              self.memory.store("user_input", input)?;
+              let prompt = format!("You are {}. User said: {}", self.name, input);
+              let llm_response = self.llm.generate(&prompt).await?;
+
+              self.memory.store("llm_response", &llm_response)?;
+              Ok(llm_response)
+          }
+
+          pub async fn use_tool(&self, tool_name: &str, input: &str) -> Result<String, RustChainError> {
+              if let Some(tool) = self.tools.get(tool_name) {
+                  match tool.invoke(input).await? {
+                      ToolResult::Success(s) => Ok(s),
+                      ToolResult::StructuredJson(val) => Ok(val.to_string()),
+                      ToolResult::Error(msg) => Err(RustChainError::Tool(msg)),
+                  }
+              } else {
+                  Err(RustChainError::Tool(format!("Tool not found: {}", tool_name)))
+              }
+          }
+      }

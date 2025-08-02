@@ -1,0 +1,10 @@
+# ⚙️ Mission 48 — Async Runtime Bootstrap
+# Defines runtime entry and wraps CLI/server systems with proper Tokio init.
+# Affects: main.rs (new), lib.rs (tokio exposed only through CLI)
+
+file: main.rs
+---
+fn main() {
+    rustchain::cli::main();
+}
+---

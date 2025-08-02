@@ -1,0 +1,22 @@
+# 16-logging-telemetry.yaml
+description: |
+  Establishes the core logging and telemetry layer for RustChain runtime.
+  Initializes structured logging via tracing-subscriber.
+
+tasks:
+  - op: create
+    file: src/infrastructure/logging.rs
+    edit: |
+      use tracing_subscriber::fmt;
+      use tracing_subscriber::EnvFilter;
+
+      pub fn init_logging() {
+          let filter = EnvFilter::try_from_default_env()
+              .unwrap_or_else(|_| EnvFilter::new("info"));
+
+          fmt()
+              .with_env_filter(filter)
+              .with_target(true)
+              .compact()
+              .init();
+      }

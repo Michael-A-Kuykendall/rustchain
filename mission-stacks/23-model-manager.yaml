@@ -1,0 +1,63 @@
+# 🧩 Mission 23 — Model Manager Abstraction
+# Introduces a model manager to register and dynamically access multiple LLMs.
+# Affects: core/model_manager.rs, engine/context.rs, lib.rs
+
+file: core/model_manager.rs
+---
+use std::collections::HashMap;
+use std::sync::Arc;
+use async_trait::async_trait;
+use crate::core::llm::LLMBackend;
+
+#[async_trait]
+pub trait ModelManager: Send + Sync {
+    async fn get_model(&self, name: &str) -> Option<Arc<dyn LLMBackend>>;
+    async fn register_model(&mut self, name: String, model: Arc<dyn LLMBackend>);
+}
+
+pub struct DefaultModelManager {
+    models: HashMap<String, Arc<dyn LLMBackend>>,
+}
+
+impl DefaultModelManager {
+    pub fn new() -> Self {
+        Self { models: HashMap::new() }
+    }
+}
+
+#[async_trait]
+impl ModelManager for DefaultModelManager {
+    async fn get_model(&self, name: &str) -> Option<Arc<dyn LLMBackend>> {
+        self.models.get(name).cloned()
+    }
+
+    async fn register_model(&mut self, name: String, model: Arc<dyn LLMBackend>) {
+        self.models.insert(name, model);
+    }
+}
+---
+
+file: engine/context.rs
+---
+use crate::core::model_manager::{ModelManager, DefaultModelManager};
+use std::sync::Arc;
+
+pub struct RuntimeContext {
+    pub model_manager: Option<Arc<dyn ModelManager>>,
+    // ... existing fields
+}
+
+impl RuntimeContext {
+    pub fn new() -> Self {
+        Self {
+            model_manager: Some(Arc::new(DefaultModelManager::new())),
+            // ... existing init
+        }
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod model_manager;
+---

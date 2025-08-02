@@ -1,0 +1,48 @@
+# 01-config-foundation.yaml
+description: |
+  Creates the central configuration system used by all modules.
+  Defines RustChainConfig struct and lazy-loaded global accessor.
+  Must be run after 00-error-foundation.yaml and before any modules needing config.
+
+tasks:
+  - op: create
+    file: src/core/config.rs
+    edit: |
+      use std::collections::HashMap;
+      use once_cell::sync::Lazy;
+      use std::sync::Mutex;
+      use crate::core::error::RustChainError;
+
+      #[derive(Clone, Debug)]
+      pub struct RustChainConfig {
+          pub endpoints: HashMap<String, String>,
+          pub timeouts: HashMap<String, u64>,
+          pub feature_flags: HashMap<String, bool>,
+      }
+
+      static CONFIG: Lazy<Mutex<Option<RustChainConfig>>> = Lazy::new(|| Mutex::new(None));
+
+      pub fn load_config(config: RustChainConfig) {
+          let mut global = CONFIG.lock().unwrap();
+          *global = Some(config);
+      }
+
+      pub fn get_config() -> Result<RustChainConfig, RustChainError> {
+          let global = CONFIG.lock().unwrap();
+          global.clone().ok_or_else(|| RustChainError::Config("Config not loaded".into()))
+      }
+
+  - op: create
+    file: rustchain.toml
+    edit: |
+      [endpoints]
+      llm = "http://localhost:11434"
+
+      [timeouts]
+      default = 30
+      memory_ttl = 300
+
+      [feature_flags]
+      tools = true
+      rag = true
+      memory = true
