@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file tests/test_suite.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/tests/test_suite.rs
+
+ERROR:
+
