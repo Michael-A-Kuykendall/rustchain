@@ -1,0 +1,139 @@
+mission:
+  name: "RustChain: Integration Testing Suite"
+  description: "Comprehensive integration tests for all components"
+  steps:
+    - id: create_integration_test
+      type: create
+      file_path: "tests/integration.rs"
+      content: |
+        use rustchain::*;
+        use std::sync::Arc;
+        
+        #[tokio::test]
+        async fn test_full_agent_workflow() {
+            // Create components
+            let llm = Arc::new(MockLLM::new());
+            let mut agent = Agent::new(llm);
+            
+            // Add tools
+            agent.add_tool(Arc::new(EchoTool::new()));
+            agent.add_tool(Arc::new(MathTool::new()));
+            
+            // Test agent interaction
+            let response = agent.run("Echo hello world").await.unwrap();
+            assert!(!response.is_empty());
+        }
+        
+        #[tokio::test]
+        async fn test_mission_loading() {
+            let mission_yaml = r#"
+        mission:
+          name: "Test Mission"
+          description: "A test"
+          steps:
+            - id: test_step
+              type: create
+              file_path: "test.txt"
+              content: "hello"
+        "#;
+            
+            std::fs::write("test_mission.yaml", mission_yaml).unwrap();
+            let mission = load_mission(std::path::Path::new("test_mission.yaml")).unwrap();
+            
+            assert_eq!(mission.name, "Test Mission");
+            assert_eq!(mission.steps.len(), 1);
+            
+            std::fs::remove_file("test_mission.yaml").ok();
+        }
+        
+        #[tokio::test]
+        async fn test_mission_execution() {
+            let executor = MissionExecutor::new();
+            let mission = Mission {
+                name: "Test Execution".to_string(),
+                description: Some("Test".to_string()),
+                steps: vec![
+                    MissionStep {
+                        id: "test".to_string(),
+                        step_type: "create".to_string(),
+                        file_path: Some("test_output.txt".to_string()),
+                        content: Some("test content".to_string()),
+                        command: None,
+                        language: None,
+                        description: None,
+                    }
+                ],
+            };
+            
+            executor.execute_mission(mission).await.unwrap();
+            
+            let content = std::fs::read_to_string("test_output.txt").unwrap();
+            assert_eq!(content, "test content");
+            
+            std::fs::remove_file("test_output.txt").ok();
+        }
+        
+        pub struct MockLLM;
+        
+        impl MockLLM {
+            pub fn new() -> Self {
+                Self
+            }
+        }
+        
+        #[async_trait::async_trait]
+        impl LLMBackend for MockLLM {
+            async fn generate(&self, _prompt: &str) -> rustchain::Result<String> {
+                Ok("Mock LLM response".to_string())
+            }
+            
+            fn name(&self) -> &'static str {
+                "mock"
+            }
+        }
+    - id: create_tool_tests
+      type: create
+      file_path: "tests/tools.rs"
+      content: |
+        use rustchain::*;
+        
+        #[tokio::test]
+        async fn test_echo_tool() {
+            let tool = EchoTool::new();
+            let result = tool.invoke("hello world").await.unwrap();
+            
+            match result {
+                ToolResult::Success(output) => assert_eq!(output, "hello world"),
+                ToolResult::Error(_) => panic!("Echo tool should not fail"),
+            }
+        }
+        
+        #[tokio::test]
+        async fn test_math_tool() {
+            let tool = MathTool::new();
+            let result = tool.invoke("2 + 2").await.unwrap();
+            
+            match result {
+                ToolResult::Success(output) => assert_eq!(output, "4"),
+                ToolResult::Error(e) => panic!("Math failed: {}", e),
+            }
+        }
+        
+        #[tokio::test]
+        async fn test_tool_registry() {
+            let mut registry = ToolRegistry::new();
+            
+            registry.register(Arc::new(EchoTool::new()));
+            registry.register(Arc::new(MathTool::new()));
+            
+            let names = registry.list_names();
+            assert!(names.contains(&"echo".to_string()));
+            assert!(names.contains(&"math".to_string()));
+            
+            let echo_tool = registry.get("echo").unwrap();
+            assert_eq!(echo_tool.name(), "echo");
+        }
+    - id: run_all_tests
+      type: test
+      language: rust
+      fail_on_error: false

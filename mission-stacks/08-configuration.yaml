@@ -1,0 +1,123 @@
+mission:
+  name: "RustChain: Configuration Management"
+  description: "Implements configuration loading and environment management"
+  steps:
+    - id: add_config_deps
+      type: edit
+      file_path: "Cargo.toml"
+      content: |
+        [package]
+        name = "rustchain"
+        version = "0.1.0"
+        edition = "2021"
+        
+        [dependencies]
+        tokio = { version = "1.0", features = ["full"] }
+        reqwest = { version = "0.11", features = ["json"] }
+        serde = { version = "1.0", features = ["derive"] }
+        serde_json = "1.0"
+        serde_yaml = "0.9"
+        async-trait = "0.1"
+        anyhow = "1.0"
+        thiserror = "1.0"
+        evalexpr = "11.0"
+        clap = { version = "4.0", features = ["derive"] }
+        toml = "0.8"
+    - id: create_config_rs
+      type: create
+      file_path: "src/core/config.rs"
+      content: |
+        use serde::{Deserialize, Serialize};
+        use std::path::Path;
+        use crate::core::Result;
+        
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        pub struct Config {
+            pub llm: LlmConfig,
+            pub tools: ToolsConfig,
+            pub logging: LoggingConfig,
+        }
+        
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        pub struct LlmConfig {
+            pub default_backend: String,
+            pub ollama_base_url: String,
+            pub ollama_model: String,
+            pub timeout_seconds: u64,
+        }
+        
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        pub struct ToolsConfig {
+            pub enabled: Vec<String>,
+        }
+        
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        pub struct LoggingConfig {
+            pub level: String,
+            pub file: Option<String>,
+        }
+        
+        impl Config {
+            pub fn load_from_file(path: &Path) -> Result<Self> {
+                let content = std::fs::read_to_string(path)?;
+                let config: Config = toml::from_str(&content)
+                    .map_err(|e| crate::core::RustChainError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+                Ok(config)
+            }
+            
+            pub fn default() -> Self {
+                Self {
+                    llm: LlmConfig {
+                        default_backend: "ollama".to_string(),
+                        ollama_base_url: "http://localhost:11434".to_string(),
+                        ollama_model: "tinyllama".to_string(),
+                        timeout_seconds: 30,
+                    },
+                    tools: ToolsConfig {
+                        enabled: vec!["echo".to_string(), "math".to_string()],
+                    },
+                    logging: LoggingConfig {
+                        level: "info".to_string(),
+                        file: None,
+                    },
+                }
+            }
+        }
+    - id: create_default_config
+      type: create
+      file_path: "rustchain.toml"
+      content: |
+        [llm]
+        default_backend = "ollama"
+        ollama_base_url = "http://localhost:11434"
+        ollama_model = "tinyllama"
+        timeout_seconds = 30
+        
+        [tools]
+        enabled = ["echo", "math"]
+        
+        [logging]
+        level = "info"
+    - id: update_core_mod_config
+      type: edit
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        pub mod agent;
+        pub mod mission;
+        pub mod memory;
+        pub mod executor;
+        pub mod config;
+        
+        pub use error::*;
+        pub use llm::*;
+        pub use agent::*;
+        pub use mission::*;
+        pub use memory::*;
+        pub use executor::*;
+        pub use config::*;
+    - id: test_config
+      type: test
+      language: rust
+      fail_on_error: false

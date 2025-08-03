@@ -1,0 +1,214 @@
+mission:
+  name: "RustChain: LLM Backend and Tool Implementation"
+  description: "Implements core LLM backend and demo tools with real working code"
+  steps:
+    - id: create_cargo_toml
+      type: create
+      file_path: "Cargo.toml"
+      content: |
+        [package]
+        name = "rustchain"
+        version = "0.1.0"
+        edition = "2021"
+        
+        [dependencies]
+        tokio = { version = "1.0", features = ["full"] }
+        reqwest = { version = "0.11", features = ["json"] }
+        serde = { version = "1.0", features = ["derive"] }
+        serde_json = "1.0"
+        async-trait = "0.1"
+        anyhow = "1.0"
+        thiserror = "1.0"
+        evalexpr = "11.0"
+        clap = { version = "4.0", features = ["derive"] }
+    - id: create_lib_rs
+      type: create
+      file_path: "src/lib.rs"
+      content: |
+        pub mod core;
+        pub mod tools;
+        pub mod cli;
+        
+        pub use core::*;
+        pub use tools::*;
+        pub use cli::*;
+    - id: create_error_rs
+      type: create
+      file_path: "src/core/error.rs"
+      content: |
+        use thiserror::Error;
+        
+        #[derive(Debug, Error)]
+        pub enum RustChainError {
+            #[error("LLM error: {0}")]
+            Llm(String),
+            #[error("Tool error: {0}")]
+            Tool(String),
+            #[error("Network error: {0}")]
+            Network(#[from] reqwest::Error),
+            #[error("IO error: {0}")]
+            Io(#[from] std::io::Error),
+        }
+        
+        pub type Result<T> = std::result::Result<T, RustChainError>;
+    - id: create_llm_rs
+      type: create
+      file_path: "src/core/llm.rs"
+      content: |
+        use crate::core::error::Result;
+        use async_trait::async_trait;
+        
+        #[async_trait]
+        pub trait LLMBackend: Send + Sync {
+            async fn generate(&self, prompt: &str) -> Result<String>;
+            fn name(&self) -> &'static str;
+        }
+        
+        pub struct OllamaBackend {
+            base_url: String,
+            model: String,
+            client: reqwest::Client,
+        }
+        
+        impl OllamaBackend {
+            pub fn new(base_url: impl Into<String>, model: impl Into<String>) -> Self {
+                Self {
+                    base_url: base_url.into(),
+                    model: model.into(),
+                    client: reqwest::Client::new(),
+                }
+            }
+        }
+        
+        #[async_trait]
+        impl LLMBackend for OllamaBackend {
+            async fn generate(&self, prompt: &str) -> Result<String> {
+                let payload = serde_json::json!({
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": false
+                });
+                
+                let response = self.client
+                    .post(&format!("{}/api/generate", self.base_url))
+                    .json(&payload)
+                    .send()
+                    .await?;
+                
+                let result: serde_json::Value = response.json().await?;
+                Ok(result["response"].as_str().unwrap_or("No response").to_string())
+            }
+            
+            fn name(&self) -> &'static str {
+                "ollama"
+            }
+        }
+    - id: create_tools_trait
+      type: create
+      file_path: "src/tools/mod.rs"
+      content: |
+        pub mod echo;
+        pub mod math;
+        
+        pub use echo::*;
+        pub use math::*;
+        
+        use crate::core::error::Result;
+        use async_trait::async_trait;
+        
+        #[derive(Debug)]
+        pub enum ToolResult {
+            Success(String),
+            Error(String),
+        }
+        
+        #[async_trait]
+        pub trait Tool: Send + Sync {
+            fn name(&self) -> &'static str;
+            async fn invoke(&self, input: &str) -> Result<ToolResult>;
+        }
+    - id: create_echo_tool
+      type: create
+      file_path: "src/tools/echo.rs"
+      content: |
+        use crate::tools::{Tool, ToolResult};
+        use crate::core::error::Result;
+        use async_trait::async_trait;
+        
+        pub struct EchoTool;
+        
+        impl EchoTool {
+            pub fn new() -> Self {
+                Self
+            }
+        }
+        
+        #[async_trait]
+        impl Tool for EchoTool {
+            fn name(&self) -> &'static str {
+                "echo"
+            }
+            
+            async fn invoke(&self, input: &str) -> Result<ToolResult> {
+                Ok(ToolResult::Success(input.to_string()))
+            }
+        }
+    - id: create_math_tool
+      type: create
+      file_path: "src/tools/math.rs"
+      content: |
+        use crate::tools::{Tool, ToolResult};
+        use crate::core::error::Result;
+        use async_trait::async_trait;
+        
+        pub struct MathTool;
+        
+        impl MathTool {
+            pub fn new() -> Self {
+                Self
+            }
+        }
+        
+        #[async_trait]
+        impl Tool for MathTool {
+            fn name(&self) -> &'static str {
+                "math"
+            }
+            
+            async fn invoke(&self, input: &str) -> Result<ToolResult> {
+                match evalexpr::eval(input) {
+                    Ok(result) => Ok(ToolResult::Success(result.to_string())),
+                    Err(e) => Ok(ToolResult::Error(format!("Math error: {}", e))),
+                }
+            }
+        }
+    - id: create_core_mod
+      type: create
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        
+        pub use error::*;
+        pub use llm::*;
+    - id: create_main_rs
+      type: create
+      file_path: "src/main.rs"
+      content: |
+        use rustchain::{OllamaBackend, EchoTool, MathTool, LLMBackend, Tool};
+        
+        #[tokio::main]
+        async fn main() -> rustchain::Result<()> {
+            println!("🚀 RustChain Starting...");
+            
+            let llm = OllamaBackend::new("http://localhost:11434", "tinyllama");
+            let echo = EchoTool::new();
+            let math = MathTool::new();
+            
+            println!("✅ RustChain basic components working!");
+            Ok(())
+        }
+    - id: test_build
+      type: test
+      language: rust
+      fail_on_error: false

@@ -1,0 +1,13 @@
+STEP: find_placeholder_comments
+DESC: Find placeholder comments indicating incomplete implementation
+
+OUTPUT:
+Command: find . -name '*.rs' -exec grep -Hn '// Should include\|// Implements\|// TODO\|// FIXME\|// Placeholder' {} \; || true
+Return code: 0
+Output:
+./src/runtime/sandbox.rs:24:        // Placeholder: integrate with system resources or watchdogs
+./core/retrieval.rs:63:        let fake_embedding = vec![0.1; 1536]; // Placeholder: replace with real embedder
+
+
+ERROR:
+

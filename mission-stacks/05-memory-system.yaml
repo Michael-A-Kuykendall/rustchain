@@ -1,0 +1,62 @@
+mission:
+  name: "RustChain: Memory and Context System"
+  description: "Implements persistent memory and context management"
+  steps:
+    - id: create_memory_rs
+      type: create
+      file_path: "src/core/memory.rs"
+      content: |
+        use std::collections::HashMap;
+        use crate::core::Result;
+        
+        pub trait MemoryStore: Send + Sync {
+            fn store(&mut self, key: &str, value: &str) -> Result<()>;
+            fn retrieve(&self, key: &str) -> Result<Option<String>>;
+            fn list_keys(&self) -> Result<Vec<String>>;
+        }
+        
+        pub struct InMemoryStore {
+            data: HashMap<String, String>,
+        }
+        
+        impl InMemoryStore {
+            pub fn new() -> Self {
+                Self {
+                    data: HashMap::new(),
+                }
+            }
+        }
+        
+        impl MemoryStore for InMemoryStore {
+            fn store(&mut self, key: &str, value: &str) -> Result<()> {
+                self.data.insert(key.to_string(), value.to_string());
+                Ok(())
+            }
+            
+            fn retrieve(&self, key: &str) -> Result<Option<String>> {
+                Ok(self.data.get(key).cloned())
+            }
+            
+            fn list_keys(&self) -> Result<Vec<String>> {
+                Ok(self.data.keys().cloned().collect())
+            }
+        }
+    - id: update_core_mod_memory
+      type: edit
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        pub mod agent;
+        pub mod mission;
+        pub mod memory;
+        
+        pub use error::*;
+        pub use llm::*;
+        pub use agent::*;
+        pub use mission::*;
+        pub use memory::*;
+    - id: test_memory
+      type: test
+      language: rust
+      fail_on_error: false

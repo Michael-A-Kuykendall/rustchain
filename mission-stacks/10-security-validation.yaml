@@ -1,0 +1,80 @@
+mission:
+  name: "RustChain: Security and Validation"
+  description: "Implements basic security checks and input validation"
+  steps:
+    - id: create_security_rs
+      type: create
+      file_path: "src/core/security.rs"
+      content: |
+        use crate::core::Result;
+        use std::path::Path;
+        
+        pub struct SecurityValidator;
+        
+        impl SecurityValidator {
+            pub fn new() -> Self {
+                Self
+            }
+            
+            pub fn validate_file_path(&self, path: &str) -> Result<()> {
+                let path = Path::new(path);
+                
+                // Prevent directory traversal
+                if path.to_string_lossy().contains("..") {
+                    return Err(crate::core::RustChainError::Tool(
+                        "Path traversal not allowed".to_string()
+                    ));
+                }
+                
+                // Prevent absolute paths outside project
+                if path.is_absolute() {
+                    return Err(crate::core::RustChainError::Tool(
+                        "Absolute paths not allowed".to_string()
+                    ));
+                }
+                
+                Ok(())
+            }
+            
+            pub fn validate_command(&self, command: &str) -> Result<()> {
+                // Basic command validation - prevent dangerous commands
+                let dangerous = ["rm -rf", "sudo", "su -", "passwd", "chmod 777"];
+                
+                for danger in dangerous {
+                    if command.contains(danger) {
+                        return Err(crate::core::RustChainError::Tool(
+                            format!("Dangerous command not allowed: {}", danger)
+                        ));
+                    }
+                }
+                
+                Ok(())
+            }
+        }
+    - id: update_core_mod_security
+      type: edit
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        pub mod agent;
+        pub mod mission;
+        pub mod memory;
+        pub mod executor;
+        pub mod config;
+        pub mod logging;
+        pub mod security;
+        
+        pub use error::*;
+        pub use llm::*;
+        pub use agent::*;
+        pub use mission::*;
+        pub use memory::*;
+        pub use executor::*;
+        pub use config::*;
+        pub use logging::*;
+        pub use security::*;
+    - id: test_security
+      type: test
+      language: rust
+      fail_on_error: false

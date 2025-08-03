@@ -1,0 +1,91 @@
+mission:
+  name: "RustChain: Logging and Telemetry"
+  description: "Implements structured logging and basic telemetry collection"
+  steps:
+    - id: add_logging_deps
+      type: edit
+      file_path: "Cargo.toml"
+      content: |
+        [package]
+        name = "rustchain"
+        version = "0.1.0"
+        edition = "2021"
+        
+        [dependencies]
+        tokio = { version = "1.0", features = ["full"] }
+        reqwest = { version = "0.11", features = ["json"] }
+        serde = { version = "1.0", features = ["derive"] }
+        serde_json = "1.0"
+        serde_yaml = "0.9"
+        async-trait = "0.1"
+        anyhow = "1.0"
+        thiserror = "1.0"
+        evalexpr = "11.0"
+        clap = { version = "4.0", features = ["derive"] }
+        toml = "0.8"
+        tracing = "0.1"
+        tracing-subscriber = "0.3"
+    - id: create_logging_rs
+      type: create
+      file_path: "src/core/logging.rs"
+      content: |
+        use tracing_subscriber::{fmt, EnvFilter};
+        
+        pub fn init_logging() {
+            let filter = EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("rustchain=info"));
+            
+            fmt()
+                .with_env_filter(filter)
+                .with_target(true)
+                .compact()
+                .init();
+        }
+        
+        #[macro_export]
+        macro_rules! log_step {
+            ($step:expr, $message:expr) => {
+                tracing::info!(step = $step, message = $message);
+            };
+        }
+    - id: update_core_mod_logging
+      type: edit
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        pub mod agent;
+        pub mod mission;
+        pub mod memory;
+        pub mod executor;
+        pub mod config;
+        pub mod logging;
+        
+        pub use error::*;
+        pub use llm::*;
+        pub use agent::*;
+        pub use mission::*;
+        pub use memory::*;
+        pub use executor::*;
+        pub use config::*;
+        pub use logging::*;
+    - id: update_main_with_logging
+      type: edit
+      file_path: "src/main.rs"
+      content: |
+        use rustchain::{cli::run_cli, init_logging};
+        
+        #[tokio::main]
+        async fn main() -> Result<(), Box<dyn std::error::Error>> {
+            init_logging();
+            
+            tracing::info!("🚀 RustChain starting...");
+            run_cli().await?;
+            tracing::info!("✅ RustChain completed");
+            
+            Ok(())
+        }
+    - id: test_logging
+      type: test
+      language: rust
+      fail_on_error: false

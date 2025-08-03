@@ -1,0 +1,312 @@
+mission:
+  name: "RustChain: Documentation and Examples"
+  description: "Final documentation, examples, and project polish"
+  steps:
+    - id: create_comprehensive_readme
+      type: edit
+      file_path: "README.md"
+      content: |
+        # RustChain
+        
+        A lightweight, mission-driven AI agent framework written in Rust.
+        
+        ## Features
+        
+        - 🤖 **LLM Integration**: Ollama, OpenAI support
+        - 🔧 **Extensible Tools**: Built-in and custom tools
+        - 📋 **Mission Execution**: YAML-based automation
+        - 🔍 **RAG Support**: Document storage and querying
+        - 🛡️ **Security**: Input validation and sandboxing
+        - ⚡ **Performance**: Rust-native async runtime
+        
+        ## Quick Start
+        
+        ```bash
+        # Clone and build
+        git clone <your-repo>
+        cd rustchain
+        cargo build
+        
+        # Run basic test
+        cargo run
+        
+        # Interactive mode
+        cargo run -- --interactive
+        
+        # Test LLM connection
+        cargo run -- --test
+        ```
+        
+        ## Mission Execution with XO
+        
+        The Executive Officer (XO) runner manages mission validation and execution:
+        
+        ```bash
+        # Setup (first time)
+        pip install langchain-ollama
+        
+        # Validate missions
+        python executive_officer.py --validate-inbox
+        
+        # List mission queue
+        python executive_officer.py --list-queue
+        
+        # Run next mission
+        python executive_officer.py --run-next
+        ```
+        
+        ## Architecture
+        
+        ```
+        rustchain/
+        ├── src/
+        │   ├── core/           # Core traits and implementations
+        │   │   ├── agent.rs    # Agent logic and tool calling
+        │   │   ├── llm.rs      # LLM backend traits
+        │   │   ├── memory.rs   # Memory management
+        │   │   ├── mission.rs  # Mission loading/parsing
+        │   │   └── executor.rs # Mission execution engine
+        │   ├── tools/          # Built-in tools
+        │   │   ├── echo.rs     # Echo tool
+        │   │   ├── math.rs     # Math evaluation
+        │   │   └── web.rs      # Web requests
+        │   └── cli/            # Command-line interface
+        ├── missions_inbox/     # Drop mission files here
+        ├── rag_store/          # Document storage
+        └── examples/           # Example missions
+        ```
+        
+        ## Creating Custom Tools
+        
+        ```rust
+        use rustchain::*;
+        use async_trait::async_trait;
+        
+        pub struct MyTool;
+        
+        #[async_trait]
+        impl Tool for MyTool {
+            fn name(&self) -> &'static str {
+                "mytool"
+            }
+            
+            async fn invoke(&self, input: &str) -> Result<ToolResult> {
+                Ok(ToolResult::Success(format!("Processed: {}", input)))
+            }
+        }
+        ```
+        
+        ## Mission File Format
+        
+        ```yaml
+        mission:
+          name: "My Mission"
+          description: "What this mission does"
+          steps:
+            - id: create_file
+              type: create
+              file_path: "output.txt"
+              content: |
+                Hello from RustChain!
+                
+            - id: run_command
+              type: command
+              command: "echo 'Mission complete'"
+        ```
+        
+        ## Configuration
+        
+        Edit `rustchain.toml`:
+        
+        ```toml
+        [llm]
+        default_backend = "ollama"
+        ollama_base_url = "http://localhost:11434"
+        ollama_model = "tinyllama"
+        
+        [tools]
+        enabled = ["echo", "math", "web"]
+        
+        [logging]
+        level = "info"
+        ```
+        
+        ## Contributing
+        
+        1. Add new tools in `src/tools/`
+        2. Register them in `ToolRegistry`
+        3. Add tests in `tests/`
+        4. Update documentation
+        
+        ## License
+        
+        MIT License - see LICENSE file for details.
+    - id: create_example_missions
+      type: create
+      file_path: "examples/demo_workflow.yaml"
+      content: |
+        mission:
+          name: "RustChain Demo Workflow"
+          description: "Demonstrates core RustChain capabilities"
+          steps:
+            - id: create_demo_file
+              type: create
+              file_path: "generated/demo.txt"
+              content: |
+                RustChain Demo File
+                ===================
+                
+                This file was created by a RustChain mission.
+                Timestamp: Generated automatically
+                
+                Capabilities demonstrated:
+                - File creation
+                - Command execution
+                - Tool integration
+                
+            - id: show_directory
+              type: command
+              command: "ls -la generated/"
+              description: "List generated files"
+              
+            - id: test_math
+              type: command
+              command: "echo 'Math test: 2+2 = 4'"
+              description: "Simple math demonstration"
+    - id: create_lib_docs
+      type: create
+      file_path: "docs/library_usage.md"
+      content: |
+        # RustChain Library Usage
+        
+        ## Basic Agent Setup
+        
+        ```rust
+        use rustchain::*;
+        use std::sync::Arc;
+        
+        #[tokio::main]
+        async fn main() -> Result<()> {
+            // Initialize logging
+            init_logging();
+            
+            // Create LLM backend
+            let llm = Arc::new(OllamaBackend::new(
+                "http://localhost:11434", 
+                "tinyllama"
+            ));
+            
+            // Create agent
+            let mut agent = Agent::new(llm);
+            
+            // Add tools
+            agent.add_tool(Arc::new(EchoTool::new()));
+            agent.add_tool(Arc::new(MathTool::new()));
+            
+            // Interact with agent
+            let response = agent.run("Calculate 5 + 3").await?;
+            println!("Agent: {}", response);
+            
+            Ok(())
+        }
+        ```
+        
+        ## Mission Execution
+        
+        ```rust
+        use rustchain::*;
+        use std::path::Path;
+        
+        #[tokio::main]
+        async fn main() -> Result<()> {
+            // Load mission from file
+            let mission = load_mission(Path::new("examples/demo_workflow.yaml"))?;
+            
+            // Execute mission
+            let executor = MissionExecutor::new();
+            executor.execute_mission(mission).await?;
+            
+            Ok(())
+        }
+        ```
+        
+        ## Custom Tool Development
+        
+        ```rust
+        use rustchain::*;
+        use async_trait::async_trait;
+        
+        pub struct FileSearchTool;
+        
+        #[async_trait]
+        impl Tool for FileSearchTool {
+            fn name(&self) -> &'static str {
+                "file_search"
+            }
+            
+            async fn invoke(&self, input: &str) -> Result<ToolResult> {
+                // Search for files matching pattern
+                use std::fs;
+                
+                let mut results = Vec::new();
+                for entry in fs::read_dir(".")? {
+                    let entry = entry?;
+                    let filename = entry.file_name().to_string_lossy().to_string();
+                    if filename.contains(input) {
+                        results.push(filename);
+                    }
+                }
+                
+                Ok(ToolResult::Success(results.join("\n")))
+            }
+        }
+        ```
+    - id: create_changelog
+      type: create
+      file_path: "CHANGELOG.md"
+      content: |
+        # Changelog
+        
+        ## v0.1.0 - Initial Release
+        
+        ### Features
+        - Core agent framework with LLM integration
+        - Tool system with echo, math, and web tools
+        - Mission execution engine with YAML support
+        - Configuration management
+        - Security validation
+        - Integration testing suite
+        - CLI interface with interactive mode
+        - Memory and context management
+        - Logging and telemetry
+        
+        ### Architecture
+        - Async-first design with Tokio runtime
+        - Modular tool registration system
+        - Type-safe error handling with thiserror
+        - Structured configuration with TOML
+        - RAG document storage integration
+        
+        ### Tools Included
+        - Echo tool (text passthrough)
+        - Math tool (expression evaluation)
+        - Web tool (HTTP requests)
+        - Tool registry for dynamic management
+        
+        ### Mission Types Supported
+        - File creation (`create`)
+        - File editing (`edit`)
+        - Command execution (`command`)
+        - Test running (`test`)
+        
+        ### Next Features (Planned)
+        - Plugin system with WASM support
+        - Advanced RAG capabilities
+        - Web interface
+        - Model switching and management
+        - Enhanced security sandbox
+    - id: final_test
+      type: test
+      language: rust
+      description: "Final comprehensive test of entire system"
+      fail_on_error: false

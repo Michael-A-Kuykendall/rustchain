@@ -1,0 +1,12 @@
+STEP: check_cargo_build_status
+DESC: Check if the Rust project compiles and show first 50 lines of errors
+
+OUTPUT:
+Command: if [ -f Cargo.toml ]; then cargo check 2>&1 | head -50; else echo 'No Cargo.toml found - Rust project not initialized'; fi
+Return code: 0
+Output:
+No Cargo.toml found - Rust project not initialized
+
+
+ERROR:
+

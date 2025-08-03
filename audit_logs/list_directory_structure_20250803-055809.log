@@ -1,0 +1,224 @@
+STEP: list_directory_structure
+DESC: Show current project structure for context
+
+OUTPUT:
+Command: tree -I 'target|node_modules|.git' -L 3 || find . -type d -not -path './.git*' -not -path './target*' | head -20
+Return code: 0
+Output:
+.
+├── EXECUTIVE_OFFICER_README.MD
+├── README.md
+├── __pycache__
+│   └── executive_officer.cpython-312.pyc
+├── audit_logs
+│   ├── check_cargo_build_status_20250803-055809.log
+│   ├── codebase_audit_report.md
+│   ├── create_file_20250803-012440.log
+│   ├── create_file_20250803-012451.log
+│   ├── create_file_20250803-012511.log
+│   ├── create_file_20250803-012512.log
+│   ├── create_file_20250803-012513.log
+│   ├── create_file_20250803-012514.log
+│   ├── create_file_20250803-012515.log
+│   ├── create_file_20250803-012516.log
+│   ├── create_file_20250803-012517.log
+│   ├── create_file_20250803-012518.log
+│   ├── create_file_20250803-012519.log
+│   ├── create_file_20250803-012520.log
+│   ├── create_file_20250803-012521.log
+│   ├── create_file_20250803-012522.log
+│   ├── create_file_20250803-012523.log
+│   ├── create_file_20250803-012524.log
+│   ├── create_file_20250803-012525.log
+│   ├── create_file_20250803-012526.log
+│   ├── create_file_20250803-012527.log
+│   ├── create_file_20250803-012528.log
+│   ├── create_file_20250803-012529.log
+│   ├── create_file_20250803-012530.log
+│   ├── create_file_20250803-012531.log
+│   ├── create_file_20250803-012532.log
+│   ├── create_file_20250803-012533.log
+│   ├── find_empty_functions_20250803-055809.log
+│   ├── find_panic_unwrap_expect_20250803-055809.log
+│   ├── find_placeholder_comments_20250803-055809.log
+│   ├── find_todo_macros_20250803-055809.log
+│   ├── find_yaml_missions_with_stubs_20250803-055809.log
+│   ├── generate_audit_report_20250803-055809.log
+│   ├── step1_20250803-003743.log
+│   ├── step1_20250803-003843.log
+│   ├── step1_20250803-003848.log
+│   ├── step1_20250803-004047.log
+│   ├── step1_20250803-004102.log
+│   ├── step1_20250803-004117.log
+│   ├── step1_20250803-004157.log
+│   ├── step1_20250803-004214.log
+│   ├── step1_20250803-004429.log
+│   ├── step1_20250803-004458.log
+│   ├── step1_20250803-004528.log
+│   ├── step1_20250803-005053.log
+│   ├── step1_20250803-010150.log
+│   ├── step1_20250803-010256.log
+│   ├── step1_20250803-010327.log
+│   ├── step1_20250803-010345.log
+│   ├── step1_20250803-010404.log
+│   ├── step1_20250803-010405.log
+│   ├── step1_20250803-010406.log
+│   ├── step1_20250803-010407.log
+│   ├── step1_20250803-010408.log
+│   ├── step1_20250803-010409.log
+│   ├── step1_20250803-010410.log
+│   ├── step1_20250803-010426.log
+│   ├── step1_20250803-010427.log
+│   ├── step1_20250803-012013.log
+│   ├── step2_20250803-003843.log
+│   └── step2_20250803-004102.log
+├── cli
+│   ├── commands.rs
+│   └── subcommands
+│       └── invariant.rs
+├── context.db
+├── core
+│   ├── audit.rs
+│   ├── model_manager.rs
+│   ├── perf.rs
+│   ├── plugin.rs
+│   ├── plugin_loader.rs
+│   ├── plugin_registry.rs
+│   ├── prompt_optimizer.rs
+│   ├── rbac.rs
+│   ├── reflection.rs
+│   ├── retrieval.rs
+│   ├── sandbox.rs
+│   ├── security.rs
+│   ├── telemetry.rs
+│   ├── tools.rs
+│   └── wasm_executor.rs
+├── engine
+│   ├── context.rs
+│   └── graph_executor.rs
+├── executive_officer.py
+├── generated
+├── main.rs
+├── meta
+│   └── mission_index.yaml
+├── mission-stacks
+│   ├── 01-llm-tools.yaml
+│   ├── 02-agent-loop.yaml
+│   ├── 03-async-runtime.yaml
+│   ├── 04-mission-imports.yaml
+│   ├── 05-mission-loader.yaml
+│   ├── 06-config-logging.yaml
+│   ├── 07-global-state.yaml
+│   ├── 08-testing-invariants.yaml
+│   ├── 09-rag-docs.yaml
+│   ├── 10-infra-hardening.yaml
+│   ├── 11-tool-suite.yaml
+│   ├── 12-cli-polish.yaml
+│   └── 13-docs-examples.yaml
+├── mission-stacks-done
+│   ├── 00-error-foundation.yaml
+│   ├── 01-config-foundation.yaml
+│   ├── 02-feature-gates.yaml
+│   ├── 03-llm-backend.yaml
+│   ├── 04-memory-api.yaml
+│   ├── 05-tool-api.yaml
+│   ├── 06-rag-embedder.yaml
+│   ├── 07-chain-execution.yaml
+│   ├── 08-agent-loop.yaml
+│   ├── 09-mission-loader.yaml
+│   ├── 10-mission-executor.yaml
+│   ├── 11-context-engine.yaml
+│   ├── 12-cli-runner.yaml
+│   ├── 13-agent-sandbox.yaml
+│   ├── 14-invariant-runtime.yaml
+│   ├── 15-plugin-scaffold.yaml
+│   ├── 16-logging-telemetry.yaml
+│   ├── 17-schema-validation.yaml
+│   ├── 18-config-bootstrap.yaml
+│   ├── 19-replay-framework.yaml
+│   ├── 20-ci-pipeline.yaml
+│   ├── 21-devtools-deps.yaml
+│   ├── 22-llm-prompt-cache.yaml
+│   ├── 23-model-manager.yaml
+│   ├── 24-sandbox-isolation.yaml
+│   ├── 25-toolchain-extension.yaml
+│   ├── 26-agent-rbac.yaml
+│   ├── 27-wasm-executor.yaml
+│   ├── 28-telemetry-hooks.yaml
+│   ├── 29-invariant-cli.yaml
+│   ├── 30-mock-fixtures.yaml
+│   ├── 31-test-suite.yaml
+│   ├── 32-plugin-registry-integration.yaml
+│   ├── 33-cli-subcommands.yaml
+│   ├── 34-security-config.yaml
+│   ├── 35-error-audit-logging.yaml
+│   ├── 36-graph-executor.yaml
+│   ├── 37-retrieval-hybrid.yaml
+│   ├── 38-prompt-optimizer.yaml
+│   ├── 39-model-switching.yaml
+│   ├── 40-chain-visualizer.yaml
+│   ├── 41-perf-dashboard.yaml
+│   ├── 42-api-server.yaml
+│   ├── 43-agent-reflection.yaml
+│   ├── 44-plugin-marketplace.yaml
+│   ├── 45-migration-utils.yaml
+│   ├── 46-mission-index.yaml
+│   ├── 48-async-runtime-bootstrap.yaml
+│   ├── 49-integration-testing.yaml
+│   ├── 50-model-management.yaml
+│   ├── 51-rag-vector-backend.yaml
+│   └── 52-secure-tool-wrapper.yaml
+├── missions
+├── missions_invalid
+├── quick_audit_mission.yaml
+├── rag_store
+├── rustchain.toml
+├── scripts
+├── server
+│   └── api.rs
+├── src
+│   ├── cli
+│   │   └── main.rs
+│   ├── core
+│   │   ├── agent.rs
+│   │   ├── chain.rs
+│   │   ├── config.rs
+│   │   ├── error.rs
+│   │   ├── llm.rs
+│   │   ├── memory.rs
+│   │   ├── model_manager.rs
+│   │   ├── rag.rs
+│   │   └── tools.rs
+│   ├── devtools
+│   │   └── deps.rs
+│   ├── engine
+│   │   ├── context.rs
+│   │   ├── executor.rs
+│   │   └── mission_loader.rs
+│   ├── infrastructure
+│   │   ├── bootstrap.rs
+│   │   ├── logging.rs
+│   │   └── schema.rs
+│   ├── lib.rs
+│   ├── plugins
+│   │   └── mod.rs
+│   ├── runtime
+│   │   ├── prompt_cache.rs
+│   │   └── sandbox.rs
+│   └── testing
+│       ├── invariants.rs
+│       └── replay.rs
+├── test
+│   └── mocks.rs
+├── tests
+│   ├── integration_end_to_end.rs
+│   └── test_suite.rs
+└── tools
+    ├── migration.rs
+    └── visualizer.rs
+
+28 directories, 183 files
+
+
+ERROR:
+

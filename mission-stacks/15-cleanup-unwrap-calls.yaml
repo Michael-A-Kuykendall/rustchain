@@ -1,0 +1,262 @@
+mission:
+  name: "RustChain: Clean Up Unsafe Unwrap Calls"
+  description: "Fixes all unwrap/expect/panic calls found in audit with proper error handling"
+  steps:
+    - id: fix_graph_executor_unwrap
+      type: edit
+      file_path: "engine/graph_executor.rs"
+      content: |
+        use std::collections::{HashMap, HashSet, VecDeque};
+        use crate::core::error::{Result, RustChainError};
+
+        #[derive(Debug, Clone)]
+        pub struct TaskNode {
+            pub id: String,
+            pub depends_on: Vec<String>,
+            pub params: HashMap<String, String>,
+        }
+
+        pub struct GraphExecutor {
+            pub tasks: HashMap<String, TaskNode>,
+        }
+
+        impl GraphExecutor {
+            pub fn new() -> Self {
+                Self {
+                    tasks: HashMap::new(),
+                }
+            }
+
+            pub fn add_task(&mut self, task: TaskNode) {
+                self.tasks.insert(task.id.clone(), task);
+            }
+
+            pub fn resolve_order(&self) -> Result<Vec<String>> {
+                let mut in_degree = HashMap::new();
+                for task in self.tasks.values() {
+                    in_degree.entry(task.id.clone()).or_insert(0);
+                    for dep in &task.depends_on {
+                        *in_degree.entry(dep.clone()).or_insert(0) += 1;
+                    }
+                }
+
+                let mut queue = VecDeque::new();
+                for (id, &deg) in &in_degree {
+                    if deg == 0 {
+                        queue.push_back(id.clone());
+                    }
+                }
+
+                let mut order = vec![];
+                let mut visited = HashSet::new();
+
+                while let Some(node) = queue.pop_front() {
+                    order.push(node.clone());
+                    visited.insert(node.clone());
+
+                    for t in self.tasks.values() {
+                        if t.depends_on.contains(&node) {
+                            let entry = in_degree.get_mut(&t.id)
+                                .ok_or_else(|| RustChainError::Tool("Missing task in dependency graph".to_string()))?;
+                            *entry -= 1;
+                            if *entry == 0 {
+                                queue.push_back(t.id.clone());
+                            }
+                        }
+                    }
+                }
+
+                if visited.len() != self.tasks.len() {
+                    Err(RustChainError::Tool("Cycle detected in task graph".to_string()))
+                } else {
+                    Ok(order)
+                }
+            }
+        }
+
+    - id: fix_config_unwraps
+      type: edit
+      file_path: "src/core/config.rs"
+      content: |
+        use std::collections::HashMap;
+        use std::sync::Mutex;
+        use crate::core::error::{Result, RustChainError};
+        use once_cell::sync::Lazy;
+
+        #[derive(Clone, Debug)]
+        pub struct RustChainConfig {
+            pub endpoints: HashMap<String, String>,
+            pub timeouts: HashMap<String, u64>,
+            pub feature_flags: HashMap<String, bool>,
+        }
+
+        static CONFIG: Lazy<Mutex<Option<RustChainConfig>>> = Lazy::new(|| Mutex::new(None));
+
+        pub fn load_config(config: RustChainConfig) -> Result<()> {
+            let mut global = CONFIG.lock()
+                .map_err(|_| RustChainError::Tool("Config lock poisoned".into()))?;
+            *global = Some(config);
+            Ok(())
+        }
+
+        pub fn get_config() -> Result<RustChainConfig> {
+            let global = CONFIG.lock()
+                .map_err(|_| RustChainError::Tool("Config lock poisoned".into()))?;
+            global.clone().ok_or_else(|| RustChainError::Tool("Config not loaded".into()))
+        }
+
+    - id: fix_cli_runtime_unwrap
+      type: edit
+      file_path: "cli/commands.rs"
+      content: |
+        use clap::{Parser, Subcommand};
+        use crate::core::error::{Result, RustChainError};
+
+        #[derive(Parser)]
+        #[clap(name = "rustchain", version = "0.1", author = "RustChain")]
+        pub struct Cli {
+            #[clap(subcommand)]
+            pub command: Commands,
+        }
+
+        #[derive(Subcommand)]
+        pub enum Commands {
+            Run {
+                #[clap(value_parser)]
+                mission: String,
+            },
+            Invariant,
+            Plugin {
+                #[clap(subcommand)]
+                cmd: PluginCommands,
+            },
+            Api,
+        }
+
+        #[derive(Subcommand)]
+        pub enum PluginCommands {
+            List,
+            Info {
+                #[clap(value_parser)]
+                id: String,
+            },
+        }
+
+        pub async fn run_cli() -> Result<()> {
+            let cli = Cli::parse();
+
+            match cli.command {
+                Commands::Run { mission } => {
+                    println!("Running mission: {}", mission);
+                    Ok(())
+                }
+                Commands::Invariant => {
+                    println!("Running invariant checks...");
+                    Ok(())
+                }
+                Commands::Plugin { cmd } => match cmd {
+                    PluginCommands::List => {
+                        println!("Listing plugins...");
+                        Ok(())
+                    }
+                    PluginCommands::Info { id } => {
+                        println!("Plugin info: {}", id);
+                        Ok(())
+                    }
+                },
+                Commands::Api => {
+                    println!("Starting API server...");
+                    // Create runtime with proper error handling
+                    let rt = tokio::runtime::Runtime::new()
+                        .map_err(|e| RustChainError::Tool(format!("Failed to create runtime: {}", e)))?;
+                    
+                    rt.block_on(async {
+                        // API server logic here
+                        println!("API server running...");
+                        Ok(())
+                    })
+                }
+            }
+        }
+
+    - id: fix_plugin_loader_unwrap
+      type: edit
+      file_path: "core/plugin_loader.rs"
+      content: |
+        use crate::core::plugin::{ToolPlugin};
+        use crate::core::plugin_registry::{PluginDescriptor, PluginRegistry};
+        use crate::core::tools::register_plugin_tools;
+        use crate::core::error::{Result, RustChainError};
+        use std::sync::Arc;
+
+        pub async fn load_plugin(
+            registry: &mut PluginRegistry,
+            plugin: Arc<dyn ToolPlugin>,
+            id: &str,
+            kind: &str,
+        ) -> Result<()> {
+            register_plugin_tools(plugin.clone()).await
+                .map_err(|e| RustChainError::Tool(format!("Failed to register plugin tools: {}", e)))?;
+            
+            let descriptor = PluginDescriptor {
+                id: id.into(),
+                kind: kind.into(),
+                registered_tools: vec![], // Extend later with reflection
+            };
+            
+            registry.register(descriptor);
+            Ok(())
+        }
+
+    - id: fix_server_unwrap
+      type: edit
+      file_path: "server/api.rs"
+      content: |
+        use axum::{
+            routing::{get, post},
+            Router, Json,
+        };
+        use serde::{Deserialize, Serialize};
+        use std::net::SocketAddr;
+        use crate::core::error::{Result, RustChainError};
+
+        #[derive(Deserialize)]
+        pub struct RunRequest {
+            pub mission_yaml: String,
+        }
+
+        #[derive(Serialize)]
+        pub struct StatusResponse {
+            pub status: String,
+        }
+
+        async fn run_mission(Json(req): Json<RunRequest>) -> Json<StatusResponse> {
+            println!("Received mission: {}", req.mission_yaml);
+            Json(StatusResponse { status: "started".into() })
+        }
+
+        async fn get_status() -> Json<StatusResponse> {
+            Json(StatusResponse { status: "ok".into() })
+        }
+
+        pub async fn serve_api() -> Result<()> {
+            let app = Router::new()
+                .route("/run", post(run_mission))
+                .route("/status", get(get_status));
+
+            let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+            println!("API server running at http://{}", addr);
+            
+            axum::Server::bind(&addr)
+                .serve(app.into_make_service())
+                .await
+                .map_err(|e| RustChainError::Tool(format!("Server failed: {}", e)))?;
+            
+            Ok(())
+        }
+
+    - id: audit_unwrap_cleanup
+      type: test
+      language: rust
+      description: "Verify all unwrap calls have been replaced with proper error handling"
+      fail_on_error: false

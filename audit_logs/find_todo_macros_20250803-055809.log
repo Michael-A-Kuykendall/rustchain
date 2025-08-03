@@ -1,0 +1,11 @@
+STEP: find_todo_macros
+DESC: Find all TODO macros and comments in Rust files
+
+OUTPUT:
+Command: find . -name '*.rs' -exec grep -Hn 'todo!()\|TODO\|FIXME\|unimplemented!' {} \; || true
+Return code: 0
+Output:
+
+
+ERROR:
+

@@ -1,0 +1,103 @@
+mission:
+  name: "RustChain: Web and Network Tools"
+  description: "Implements web scraping and HTTP request tools"
+  steps:
+    - id: create_web_tool
+      type: create
+      file_path: "src/tools/web.rs"
+      content: |
+        use crate::tools::{Tool, ToolResult};
+        use crate::core::error::Result;
+        use async_trait::async_trait;
+        
+        pub struct WebTool {
+            client: reqwest::Client,
+        }
+        
+        impl WebTool {
+            pub fn new() -> Self {
+                Self {
+                    client: reqwest::Client::new(),
+                }
+            }
+        }
+        
+        #[async_trait]
+        impl Tool for WebTool {
+            fn name(&self) -> &'static str {
+                "web"
+            }
+            
+            async fn invoke(&self, input: &str) -> Result<ToolResult> {
+                // Simple URL fetch
+                if let Ok(url) = url::Url::parse(input) {
+                    match self.client.get(url).send().await {
+                        Ok(response) => {
+                            match response.text().await {
+                                Ok(text) => Ok(ToolResult::Success(text[..500.min(text.len())].to_string())),
+                                Err(e) => Ok(ToolResult::Error(format!("Failed to read response: {}", e))),
+                            }
+                        }
+                        Err(e) => Ok(ToolResult::Error(format!("HTTP request failed: {}", e))),
+                    }
+                } else {
+                    Ok(ToolResult::Error("Invalid URL".to_string()))
+                }
+            }
+        }
+    - id: add_url_dep
+      type: edit
+      file_path: "Cargo.toml"
+      content: |
+        [package]
+        name = "rustchain"
+        version = "0.1.0"
+        edition = "2021"
+        
+        [dependencies]
+        tokio = { version = "1.0", features = ["full"] }
+        reqwest = { version = "0.11", features = ["json"] }
+        serde = { version = "1.0", features = ["derive"] }
+        serde_json = "1.0"
+        serde_yaml = "0.9"
+        async-trait = "0.1"
+        anyhow = "1.0"
+        thiserror = "1.0"
+        evalexpr = "11.0"
+        clap = { version = "4.0", features = ["derive"] }
+        toml = "0.8"
+        tracing = "0.1"
+        tracing-subscriber = "0.3"
+        url = "2.0"
+    - id: update_tools_mod_web
+      type: edit
+      file_path: "src/tools/mod.rs"
+      content: |
+        pub mod echo;
+        pub mod math;
+        pub mod registry;
+        pub mod web;
+        
+        pub use echo::*;
+        pub use math::*;
+        pub use registry::*;
+        pub use web::*;
+        
+        use crate::core::error::Result;
+        use async_trait::async_trait;
+        
+        #[derive(Debug)]
+        pub enum ToolResult {
+            Success(String),
+            Error(String),
+        }
+        
+        #[async_trait]
+        pub trait Tool: Send + Sync {
+            fn name(&self) -> &'static str;
+            async fn invoke(&self, input: &str) -> Result<ToolResult>;
+        }
+    - id: test_web_tools
+      type: test
+      language: rust
+      fail_on_error: false

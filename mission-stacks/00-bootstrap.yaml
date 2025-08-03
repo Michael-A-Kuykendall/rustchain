@@ -1,0 +1,32 @@
+mission:
+  name: "RustChain: Project Bootstrap and Configuration"
+  description: "Bootstraps the RustChain project with proper directory structure, configuration files, and basic documentation"
+  steps:
+    - id: create_directories
+      type: command
+      command: "mkdir -p src/core src/tools src/cli tests examples docs missions_inbox missions_invalid rag_store audit_logs generated"
+    - id: create_gitignore
+      type: create
+      file_path: ".gitignore"
+      content: |
+        /target
+        **/*.rs.bk
+        Cargo.lock
+        .env
+        .vscode/
+        *.log
+        audit_logs/
+        context.db
+        missions_invalid/
+    - id: create_readme
+      type: create
+      file_path: "README.md"
+      content: |
+        # RustChain
+        Lightweight, mission-driven AI agent framework written in Rust.
+        
+        ## Quick Start
+        ```bash
+        cargo run
+        cargo run -- --help
+        ```

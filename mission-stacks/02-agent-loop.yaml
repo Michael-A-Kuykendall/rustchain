@@ -1,0 +1,107 @@
+mission:
+  name: "RustChain: Agent Loop and Context Integration"
+  description: "Implements agent loop logic with tool calling and memory management"
+  steps:
+    - id: create_agent_rs
+      type: create
+      file_path: "src/core/agent.rs"
+      content: |
+        use crate::core::{LLMBackend, Result, RustChainError};
+        use crate::tools::{Tool, ToolResult};
+        use std::collections::HashMap;
+        use std::sync::Arc;
+        
+        pub struct Agent {
+            llm: Arc<dyn LLMBackend>,
+            tools: HashMap<String, Arc<dyn Tool>>,
+            memory: HashMap<String, String>,
+        }
+        
+        impl Agent {
+            pub fn new(llm: Arc<dyn LLMBackend>) -> Self {
+                Self {
+                    llm,
+                    tools: HashMap::new(),
+                    memory: HashMap::new(),
+                }
+            }
+            
+            pub fn add_tool(&mut self, tool: Arc<dyn Tool>) {
+                self.tools.insert(tool.name().to_string(), tool);
+            }
+            
+            pub async fn run(&mut self, input: &str) -> Result<String> {
+                self.memory.insert("user_input".to_string(), input.to_string());
+                
+                let tool_list: Vec<String> = self.tools.keys().cloned().collect();
+                let tools_str = tool_list.join(", ");
+                
+                let prompt = format!(
+                    "Available tools: {}. User: {}. If you need a tool, respond: TOOL:name:input",
+                    tools_str, input
+                );
+                
+                let llm_response = self.llm.generate(&prompt).await?;
+                
+                if llm_response.starts_with("TOOL:") {
+                    let parts: Vec<&str> = llm_response.splitn(3, ':').collect();
+                    if parts.len() == 3 {
+                        let tool_name = parts[1];
+                        let tool_input = parts[2];
+                        
+                        if let Some(tool) = self.tools.get(tool_name) {
+                            match tool.invoke(tool_input).await? {
+                                ToolResult::Success(result) => {
+                                    let final_prompt = format!("Tool result: {}. Respond to user.", result);
+                                    return self.llm.generate(&final_prompt).await;
+                                }
+                                ToolResult::Error(err) => {
+                                    return Err(RustChainError::Tool(err));
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Ok(llm_response)
+            }
+        }
+    - id: update_core_mod
+      type: edit
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        pub mod agent;
+        
+        pub use error::*;
+        pub use llm::*;
+        pub use agent::*;
+    - id: update_main_with_agent
+      type: edit
+      file_path: "src/main.rs"
+      content: |
+        use rustchain::{OllamaBackend, EchoTool, MathTool, Agent};
+        use std::sync::Arc;
+        
+        #[tokio::main]
+        async fn main() -> rustchain::Result<()> {
+            println!("🚀 RustChain with Agent...");
+            
+            let llm = Arc::new(OllamaBackend::new("http://localhost:11434", "tinyllama"));
+            let mut agent = Agent::new(llm);
+            
+            agent.add_tool(Arc::new(EchoTool::new()));
+            agent.add_tool(Arc::new(MathTool::new()));
+            
+            match agent.run("Say hello").await {
+                Ok(response) => println!("🤖 Agent: {}", response),
+                Err(e) => println!("⚠️ Error: {}", e),
+            }
+            
+            Ok(())
+        }
+    - id: test_agent
+      type: test
+      language: rust
+      fail_on_error: false

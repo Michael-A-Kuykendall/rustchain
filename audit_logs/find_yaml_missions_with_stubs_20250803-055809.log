@@ -1,0 +1,12 @@
+STEP: find_yaml_missions_with_stubs
+DESC: Find mission YAML files with placeholder content
+
+OUTPUT:
+Command: find mission-stacks/ -name '*.yaml' -exec grep -l 'Should include\|Implements.*\./\|TODO\|placeholder' {} \; || true
+Return code: 0
+Output:
+mission-stacks/02-agent-loop.yaml
+
+
+ERROR:
+

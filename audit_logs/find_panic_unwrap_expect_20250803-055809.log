@@ -1,0 +1,23 @@
+STEP: find_panic_unwrap_expect
+DESC: Find unsafe unwrap/expect/panic calls that need proper error handling
+
+OUTPUT:
+Command: find . -name '*.rs' -exec grep -Hn 'panic!\|.unwrap()\|.expect(' {} \; || true
+Return code: 0
+Output:
+./engine/graph_executor.rs:50:                    let entry = in_degree.get_mut(&t.id).unwrap();
+./src/testing/invariants.rs:5:            panic!("Invariant failed: {}", $msg);
+./src/testing/invariants.rs:14:        panic!("Invariant violated: history too long");
+./src/testing/invariants.rs:18:        panic!("Invariant violated: too many vars");
+./src/core/config.rs:16:    let mut global = CONFIG.lock().unwrap();
+./src/core/config.rs:21:    let global = CONFIG.lock().unwrap();
+./cli/commands.rs:60:            let rt = tokio::runtime::Runtime::new().unwrap();
+./core/plugin_loader.rs:33:    let rt = tokio::runtime::Runtime::new().unwrap();
+./server/api.rs:37:        .unwrap();
+./tests/integration_end_to_end.rs:27:    let model = ctx.get_model_for("default").await.unwrap();
+./tests/integration_end_to_end.rs:28:    let reply = model.generate("echoed world").await.unwrap();
+./tests/test_suite.rs:15:    let result = llm.generate("ping").await.unwrap();
+
+
+ERROR:
+

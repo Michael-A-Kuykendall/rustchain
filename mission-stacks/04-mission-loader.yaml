@@ -1,0 +1,79 @@
+mission:
+  name: "RustChain: Mission File Loading"
+  description: "Implements YAML mission file parsing and validation"
+  steps:
+    - id: add_yaml_deps
+      type: edit
+      file_path: "Cargo.toml"
+      content: |
+        [package]
+        name = "rustchain"
+        version = "0.1.0"
+        edition = "2021"
+        
+        [dependencies]
+        tokio = { version = "1.0", features = ["full"] }
+        reqwest = { version = "0.11", features = ["json"] }
+        serde = { version = "1.0", features = ["derive"] }
+        serde_json = "1.0"
+        serde_yaml = "0.9"
+        async-trait = "0.1"
+        anyhow = "1.0"
+        thiserror = "1.0"
+        evalexpr = "11.0"
+        clap = { version = "4.0", features = ["derive"] }
+    - id: create_mission_loader
+      type: create
+      file_path: "src/core/mission.rs"
+      content: |
+        use serde::{Deserialize, Serialize};
+        use std::path::Path;
+        use crate::core::Result;
+        
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        pub struct Mission {
+            pub name: String,
+            pub description: Option<String>,
+            pub steps: Vec<MissionStep>,
+        }
+        
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        pub struct MissionStep {
+            pub id: String,
+            #[serde(rename = "type")]
+            pub step_type: String,
+            pub file_path: Option<String>,
+            pub content: Option<String>,
+            pub command: Option<String>,
+            pub language: Option<String>,
+            pub description: Option<String>,
+        }
+        
+        pub fn load_mission(path: &Path) -> Result<Mission> {
+            let content = std::fs::read_to_string(path)?;
+            let data: serde_yaml::Value = serde_yaml::from_str(&content)
+                .map_err(|e| crate::core::RustChainError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+            
+            let mission_data = data.get("mission").unwrap_or(&data);
+            let mission: Mission = serde_yaml::from_value(mission_data.clone())
+                .map_err(|e| crate::core::RustChainError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+            
+            Ok(mission)
+        }
+    - id: update_core_mod_mission
+      type: edit
+      file_path: "src/core/mod.rs"
+      content: |
+        pub mod error;
+        pub mod llm;
+        pub mod agent;
+        pub mod mission;
+        
+        pub use error::*;
+        pub use llm::*;
+        pub use agent::*;
+        pub use mission::*;
+    - id: test_mission_loading
+      type: test
+      language: rust
+      fail_on_error: false
