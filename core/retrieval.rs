@@ -1,5 +1,7 @@
 use async_trait::async_trait;
 use std::sync::Arc;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 
 #[async_trait]
 pub trait Retriever: Send + Sync {
@@ -32,9 +34,54 @@ impl HybridRetriever {
         results
     }
 }
----
 
-file: lib.rs
----
-pub mod retrieval;
+pub struct QdrantRetriever {
+    pub url: String,
+    pub collection: String,
+    pub client: Client,
+}
+
+#[derive(Serialize)]
+struct QdrantSearchRequest<'a> {
+    vector: &'a [f32],
+    top: usize,
+}
+
+#[derive(Deserialize)]
+struct QdrantSearchResult {
+    result: Vec<QdrantPoint>,
+}
+
+#[derive(Deserialize)]
+struct QdrantPoint {
+    payload: Option<std::collections::HashMap<String, String>>,
+}
+
+#[async_trait]
+impl Retriever for QdrantRetriever {
+    async fn retrieve(&self, query: &str) -> Vec<String> {
+        let fake_embedding = vec![0.1; 1536]; // Placeholder: replace with real embedder
+        let body = QdrantSearchRequest {
+            vector: &fake_embedding,
+            top: 5,
+        };
+
+        let res = self.client
+            .post(format!("{}/collections/{}/points/search", self.url, self.collection))
+            .json(&body)
+            .send()
+            .await;
+
+        match res {
+            Ok(resp) => match resp.json::<QdrantSearchResult>().await {
+                Ok(parsed) => parsed.result
+                    .into_iter()
+                    .filter_map(|p| p.payload?.get("text").cloned())
+                    .collect(),
+                Err(_) => vec![],
+            },
+            Err(_) => vec![],
+        }
+    }
+}
 ---
