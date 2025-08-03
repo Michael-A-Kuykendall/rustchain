@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file meta/mission_index.yaml
+
+OUTPUT:
+File created: /workspaces/rustchain/meta/mission_index.yaml
+
+ERROR:
+

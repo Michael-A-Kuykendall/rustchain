@@ -1,0 +1,156 @@
+version: "v2.1"
+missions:
+  - id: 00
+    file: 00-error-foundation.yaml
+    description: error-foundation
+  - id: 01
+    file: 01-config-foundation.yaml
+    description: config-foundation
+  - id: 02
+    file: 02-feature-gates.yaml
+    description: feature-gates
+  - id: 03
+    file: 03-llm-backend.yaml
+    description: llm-backend
+  - id: 04
+    file: 04-memory-api.yaml
+    description: memory-api
+  - id: 05
+    file: 05-tool-api.yaml
+    description: tool-api
+  - id: 06
+    file: 06-rag-embedder.yaml
+    description: rag-embedder
+  - id: 07
+    file: 07-chain-execution.yaml
+    description: chain-execution
+  - id: 08
+    file: 08-agent-loop.yaml
+    description: agent-loop
+  - id: 09
+    file: 09-mission-loader.yaml
+    description: mission-loader
+  - id: 10
+    file: 10-mission-executor.yaml
+    description: mission-executor
+  - id: 11
+    file: 11-cli-runner.yaml
+    description: cli-runner
+  - id: 12
+    file: 12-agent-sandbox.yaml
+    description: agent-sandbox
+  - id: 13
+    file: 13-invariant-runtime.yaml
+    description: invariant-runtime
+  - id: 14
+    file: 14-plugin-system.yaml
+    description: plugin-system
+  - id: 15
+    file: 15-telemetry-core.yaml
+    description: telemetry-core
+  - id: 16
+    file: 16-schema-validation.yaml
+    description: schema-validation
+  - id: 17
+    file: 17-config-bootstrap.yaml
+    description: config-bootstrap
+  - id: 18
+    file: 18-replay-framework.yaml
+    description: replay-framework
+  - id: 19
+    file: 19-ci-pipeline.yaml
+    description: ci-pipeline
+  - id: 20
+    file: 20-agent-introspection.yaml
+    description: agent-introspection
+  - id: 21
+    file: 21-test-suite.yaml
+    description: test-suite
+  - id: 22
+    file: 22-model-manager.yaml
+    description: model-manager
+  - id: 23
+    file: 23-sandbox-isolation.yaml
+    description: sandbox-isolation
+  - id: 24
+    file: 24-toolchain-extension.yaml
+    description: toolchain-extension
+  - id: 25
+    file: 25-agent-rbac.yaml
+    description: agent-rbac
+  - id: 26
+    file: 26-wasm-executor.yaml
+    description: wasm-executor
+  - id: 27
+    file: 27-telemetry-hooks.yaml
+    description: telemetry-hooks
+  - id: 28
+    file: 28-invariant-cli.yaml
+    description: invariant-cli
+  - id: 29
+    file: 29-mock-fixtures.yaml
+    description: mock-fixtures
+  - id: 30
+    file: 30-test-suite.yaml
+    description: test-suite
+  - id: 31
+    file: 31-plugin-registry-integration.yaml
+    description: plugin-registry-integration
+  - id: 32
+    file: 32-cli-subcommands.yaml
+    description: cli-subcommands
+  - id: 33
+    file: 33-security-config.yaml
+    description: security-config
+  - id: 34
+    file: 34-error-audit-logging.yaml
+    description: error-audit-logging
+  - id: 35
+    file: 35-graph-executor.yaml
+    description: graph-executor
+  - id: 36
+    file: 36-retrieval-hybrid.yaml
+    description: retrieval-hybrid
+  - id: 37
+    file: 37-prompt-optimizer.yaml
+    description: prompt-optimizer
+  - id: 38
+    file: 38-model-switching.yaml
+    description: model-switching
+  - id: 39
+    file: 39-chain-visualizer.yaml
+    description: chain-visualizer
+  - id: 40
+    file: 40-perf-dashboard.yaml
+    description: perf-dashboard
+  - id: 41
+    file: 41-api-server.yaml
+    description: api-server
+  - id: 42
+    file: 42-agent-reflection.yaml
+    description: agent-reflection
+  - id: 43
+    file: 43-plugin-marketplace.yaml
+    description: plugin-marketplace
+  - id: 44
+    file: 44-migration-utils.yaml
+    description: migration-utils
+  - id: 45
+    file: 45-mission-index.yaml
+    description: mission-index
+  - id: 46
+    file: 46-async-runtime-bootstrap.yaml
+    description: async-runtime-bootstrap
+  - id: 47
+    file: 47-integration-testing.yaml
+    description: integration-testing
+  - id: 48
+    file: 48-model-management.yaml
+    description: model-management
+  - id: 49
+    file: 49-rag-vector-backend.yaml
+    description: rag-vector-backend
+  - id: 50
+    file: 50-secure-tool-wrapper.yaml
+    description: secure-tool-wrapper
+---
