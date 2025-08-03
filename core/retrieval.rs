@@ -1,0 +1,40 @@
+use async_trait::async_trait;
+use std::sync::Arc;
+
+#[async_trait]
+pub trait Retriever: Send + Sync {
+    async fn retrieve(&self, query: &str) -> Vec<String>;
+}
+
+pub struct HybridRetriever {
+    pub sources: Vec<Arc<dyn Retriever>>,
+}
+
+impl HybridRetriever {
+    pub fn new() -> Self {
+        Self { sources: vec![] }
+    }
+
+    pub fn add_source(&mut self, source: Arc<dyn Retriever>) {
+        self.sources.push(source);
+    }
+
+    pub async fn query(&self, query: &str) -> Vec<String> {
+        let mut results = vec![];
+
+        for source in &self.sources {
+            match source.retrieve(query).await {
+                r if !r.is_empty() => results.extend(r),
+                _ => continue,
+            }
+        }
+
+        results
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod retrieval;
+---
