@@ -1,0 +1,79 @@
+use std::collections::HashMap;
+
+#[derive(Debug, Clone)]
+pub struct ActionLog {
+    pub step: usize,
+    pub tool_name: String,
+    pub input: String,
+    pub output: String,
+}
+
+pub struct AgentHistoryLog {
+    logs: HashMap<String, Vec<ActionLog>>, // agent_id -> log entries
+}
+
+impl AgentHistoryLog {
+    pub fn new() -> Self {
+        Self { logs: HashMap::new() }
+    }
+
+    pub fn record(&mut self, agent_id: &str, log: ActionLog) {
+        self.logs.entry(agent_id.to_string()).or_default().push(log);
+    }
+
+    pub fn get_last(&self, agent_id: &str) -> Option<ActionLog> {
+        self.logs.get(agent_id).and_then(|v| v.last().cloned())
+    }
+}
+---
+
+file: engine/context.rs
+---
+use crate::core::reflection::AgentHistoryLog;
+
+pub struct RuntimeContext {
+    pub history_log: AgentHistoryLog,
+    // existing fields...
+}
+
+impl RuntimeContext {
+    pub fn new() -> Self {
+        Self {
+            history_log: AgentHistoryLog::new(),
+            // existing init...
+        }
+    }
+}
+---
+
+file: core/tools.rs
+---
+use crate::core::reflection::{AgentHistoryLog, ActionLog};
+use crate::engine::context::RuntimeContext;
+
+pub struct ReflectionTool;
+
+#[async_trait]
+impl Tool for ReflectionTool {
+    async fn name(&self) -> String {
+        "reflect".into()
+    }
+
+    async fn call(&self, input: &str) -> String {
+        let ctx: RuntimeContext = todo!("Inject runtime context");
+        let agent_id = input.trim();
+        match ctx.history_log.get_last(agent_id) {
+            Some(log) => format!(
+                "Last action: step {}, tool {}, output: {}",
+                log.step, log.tool_name, log.output
+            ),
+            None => "No actions recorded".into(),
+        }
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod reflection;
+---
