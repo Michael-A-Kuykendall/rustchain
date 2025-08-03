@@ -1,8 +1,10 @@
 pub mod echo;
 pub mod math;
+pub mod registry;
 
 pub use echo::*;
 pub use math::*;
+pub use registry::*;
 
 use crate::core::error::Result;
 use async_trait::async_trait;
