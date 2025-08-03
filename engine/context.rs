@@ -1,0 +1,18 @@
+use crate::core::llm::LLMBackend;
+use crate::core::model_manager::ModelManager;
+use std::sync::Arc;
+
+impl RuntimeContext {
+    pub async fn get_model_for(&self, agent_id: &str) -> Result<Arc<dyn LLMBackend>, String> {
+        if let Some(manager) = &self.model_manager {
+            if let Some(model) = manager.get_model(agent_id).await {
+                return Ok(model);
+            } else {
+                return Err(format!("Model not found for agent: {}", agent_id));
+            }
+        }
+
+        Err("No model manager registered".to_string())
+    }
+}
+---
