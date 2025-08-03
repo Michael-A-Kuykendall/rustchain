@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file core/security.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/core/security.rs
+
+ERROR:
+
