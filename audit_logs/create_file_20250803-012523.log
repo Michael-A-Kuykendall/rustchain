@@ -1,8 +1,8 @@
 STEP: create_file
-DESC: Create file engine/context.rs
+DESC: Create file tools/visualizer.rs
 
 OUTPUT:
-File created: /workspaces/rustchain/engine/context.rs
+File created: /workspaces/rustchain/tools/visualizer.rs
 
 ERROR:
 

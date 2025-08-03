@@ -1,0 +1,30 @@
+use crate::engine::graph_executor::GraphExecutor;
+use std::fmt::Write;
+
+pub struct Visualizer;
+
+impl Visualizer {
+    pub fn to_dot(graph: &GraphExecutor) -> String {
+        let mut out = String::from("digraph G {
+");
+
+        for node in graph.tasks.values() {
+            for dep in &node.depends_on {
+                let _ = writeln!(out, "  "{}" -> "{}";", dep, node.id);
+            }
+            if node.depends_on.is_empty() {
+                let _ = writeln!(out, "  "{}";", node.id);
+            }
+        }
+
+        out.push_str("}
+");
+        out
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod visualizer;
+---
