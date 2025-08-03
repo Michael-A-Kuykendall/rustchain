@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file server/api.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/server/api.rs
+
+ERROR:
+
