@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file core/plugin_registry.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/core/plugin_registry.rs
+
+ERROR:
+
