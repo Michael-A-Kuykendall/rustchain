@@ -1,11 +1,11 @@
-[endpoints]
-llm = "http://localhost:11434"
+[llm]
+default_backend = "ollama"
+ollama_base_url = "http://localhost:11434"
+ollama_model = "tinyllama"
+timeout_seconds = 30
 
-[timeouts]
-default = 30
-memory_ttl = 300
+[tools]
+enabled = ["echo", "math"]
 
-[feature_flags]
-tools = true
-rag = true
-memory = true
+[logging]
+level = "info"

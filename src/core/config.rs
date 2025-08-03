@@ -1,23 +1,56 @@
-use std::collections::HashMap;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-use crate::core::error::RustChainError;
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+use crate::core::Result;
 
-#[derive(Clone, Debug)]
-pub struct RustChainConfig {
-    pub endpoints: HashMap<String, String>,
-    pub timeouts: HashMap<String, u64>,
-    pub feature_flags: HashMap<String, bool>,
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Config {
+    pub llm: LlmConfig,
+    pub tools: ToolsConfig,
+    pub logging: LoggingConfig,
 }
 
-static CONFIG: Lazy<Mutex<Option<RustChainConfig>>> = Lazy::new(|| Mutex::new(None));
-
-pub fn load_config(config: RustChainConfig) {
-    let mut global = CONFIG.lock().unwrap();
-    *global = Some(config);
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LlmConfig {
+    pub default_backend: String,
+    pub ollama_base_url: String,
+    pub ollama_model: String,
+    pub timeout_seconds: u64,
 }
 
-pub fn get_config() -> Result<RustChainConfig, RustChainError> {
-    let global = CONFIG.lock().unwrap();
-    global.clone().ok_or_else(|| RustChainError::Config("Config not loaded".into()))
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ToolsConfig {
+    pub enabled: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LoggingConfig {
+    pub level: String,
+    pub file: Option<String>,
+}
+
+impl Config {
+    pub fn load_from_file(path: &Path) -> Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        let config: Config = toml::from_str(&content)
+            .map_err(|e| crate::core::RustChainError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
+        Ok(config)
+    }
+    
+    pub fn default() -> Self {
+        Self {
+            llm: LlmConfig {
+                default_backend: "ollama".to_string(),
+                ollama_base_url: "http://localhost:11434".to_string(),
+                ollama_model: "tinyllama".to_string(),
+                timeout_seconds: 30,
+            },
+            tools: ToolsConfig {
+                enabled: vec!["echo".to_string(), "math".to_string()],
+            },
+            logging: LoggingConfig {
+                level: "info".to_string(),
+                file: None,
+            },
+        }
+    }
 }

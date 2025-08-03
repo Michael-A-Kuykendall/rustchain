@@ -14,3 +14,4 @@ anyhow = "1.0"
 thiserror = "1.0"
 evalexpr = "11.0"
 clap = { version = "4.0", features = ["derive"] }
+toml = "0.8"
