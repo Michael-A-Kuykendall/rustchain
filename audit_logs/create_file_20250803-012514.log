@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file cli/subcommands/invariant.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/cli/subcommands/invariant.rs
+
+ERROR:
+
