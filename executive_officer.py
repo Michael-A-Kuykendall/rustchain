@@ -169,6 +169,74 @@ def validate_mission_file(mission_path: Path) -> tuple[bool, Dict[str, Any], str
     except Exception as e:
         return False, {}, f"Validation error: {e}"
 
+def store_mission_to_rag(mission_path: Path, mission_data: Dict[str, Any]):
+    """Store mission content to RAG storage for AI retrieval"""
+    try:
+        RAG_DIR.mkdir(exist_ok=True)
+        
+        # Create RAG storage file
+        rag_filename = f"mission_{mission_path.stem}.md"
+        rag_path = RAG_DIR / rag_filename
+        
+        # Format mission content for RAG
+        rag_content = f"""# Mission: {mission_data['name']}
+
+**File**: {mission_path.name}
+**Description**: {mission_data.get('description', 'No description')}
+**Status**: In Queue
+**Steps**: {len(mission_data.get('steps', mission_data.get('tasks', [])))}
+
+## Mission Content
+
+```yaml
+{yaml.dump(mission_data, default_flow_style=False, sort_keys=False)}
+```
+
+## Steps Overview
+
+"""
+        
+        # Add step details
+        steps = mission_data.get('steps', mission_data.get('tasks', []))
+        for i, step in enumerate(steps, 1):
+            step_id = step.get('id', f'step_{i}')
+            step_type = step.get('type', 'unknown')
+            description = step.get('description', step_id)
+            
+            rag_content += f"### Step {i}: {step_id}\n"
+            rag_content += f"- **Type**: {step_type}\n"
+            rag_content += f"- **Description**: {description}\n"
+            
+            if step.get('file_path'):
+                rag_content += f"- **Target File**: {step['file_path']}\n"
+            if step.get('command'):
+                rag_content += f"- **Command**: `{step['command']}`\n"
+            rag_content += "\n"
+        
+        # Write to RAG storage
+        with open(rag_path, 'w', encoding='utf-8') as f:
+            f.write(rag_content)
+        
+        # Also store in context database for search
+        content_hash = hashlib.md5(rag_content.encode()).hexdigest()
+        conn = sqlite3.connect(CONTEXT_DB)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO contexts 
+            (source_file, content_hash, title, content, keywords, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (str(rag_path), content_hash, f"Mission: {mission_data['name']}", 
+              rag_content, f"mission,{mission_path.stem},{step_type}"))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"📚 Mission stored to RAG: {rag_filename}")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to store mission to RAG: {e}")
+
 def ingest_mission_to_queue(mission_path: Path, mission_data: Dict[str, Any]) -> bool:
     """Add validated mission to the queue database"""
     try:
@@ -204,6 +272,10 @@ def ingest_mission_to_queue(mission_path: Path, mission_data: Dict[str, Any]) ->
         
         conn.commit()
         conn.close()
+        
+        # Store mission content to RAG for AI retrieval
+        store_mission_to_rag(mission_path, mission_data)
+        
         return True
         
     except Exception as e:
@@ -350,6 +422,57 @@ def get_next_mission() -> Optional[Path]:
     
     return None
 
+def update_mission_rag_status(mission_path: Path, status: str, completion_details: str = ""):
+    """Update mission status in RAG storage"""
+    try:
+        rag_filename = f"mission_{mission_path.stem}.md"
+        rag_path = RAG_DIR / rag_filename
+        
+        if rag_path.exists():
+            # Read existing content
+            with open(rag_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Update status line
+            status_emoji = {
+                'completed': '✅ Completed',
+                'failed': '❌ Failed', 
+                'running': '🔄 Running',
+                'pending': '⏳ Pending'
+            }.get(status, status)
+            
+            # Replace status line
+            content = re.sub(r'\*\*Status\*\*: .*', f'**Status**: {status_emoji}', content)
+            
+            # Add completion details if provided
+            if completion_details:
+                if "## Execution Results" not in content:
+                    content += f"\n\n## Execution Results\n\n{completion_details}\n"
+                else:
+                    content = re.sub(r'## Execution Results\n\n.*?(?=\n## |\Z)', 
+                                   f'## Execution Results\n\n{completion_details}\n', content, flags=re.DOTALL)
+            
+            # Write updated content
+            with open(rag_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # Update in context database
+            content_hash = hashlib.md5(content.encode()).hexdigest()
+            conn = sqlite3.connect(CONTEXT_DB)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                UPDATE contexts 
+                SET content = ?, content_hash = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE source_file = ?
+            ''', (content, content_hash, str(rag_path)))
+            
+            conn.commit()
+            conn.close()
+            
+    except Exception as e:
+        print(f"⚠️ Failed to update mission RAG status: {e}")
+
 def mark_mission_status(mission_file: Path, status: str, completion_status: str = None):
     """Update mission status in queue"""
     conn = sqlite3.connect(CONTEXT_DB)
@@ -370,6 +493,47 @@ def mark_mission_status(mission_file: Path, status: str, completion_status: str 
     
     conn.commit()
     conn.close()
+    
+    # Also update RAG storage
+    update_mission_rag_status(mission_file, status, completion_status or "")
+
+# --- RAG Query Functions ---
+def query_mission_rag(query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    """Query RAG storage for mission-related information"""
+    results = []
+    
+    # Search contexts database
+    conn = sqlite3.connect(CONTEXT_DB)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT title, content, source_file, updated_at
+        FROM contexts 
+        WHERE (content LIKE ? OR keywords LIKE ? OR title LIKE ?)
+        AND source_file LIKE '%rag_store%'
+        ORDER BY updated_at DESC
+        LIMIT ?
+    ''', (f'%{query}%', f'%{query}%', f'%{query}%', limit))
+    
+    for row in cursor.fetchall():
+        title, content, source_file, updated_at = row
+        results.append({
+            'title': title,
+            'content': content[:1000] + '...' if len(content) > 1000 else content,
+            'source': Path(source_file).name,
+            'updated_at': updated_at
+        })
+    
+    conn.close()
+    return results
+
+def list_missions_in_rag() -> List[str]:
+    """List all missions currently stored in RAG"""
+    try:
+        rag_files = list(RAG_DIR.glob("mission_*.md"))
+        return [f.stem.replace('mission_', '') for f in rag_files]
+    except:
+        return []
 
 # --- Original XO Functions (keeping existing functionality) ---
 TEST_PATTERNS = {

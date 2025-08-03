@@ -1,0 +1,9 @@
+/target
+**/*.rs.bk
+Cargo.lock
+.env
+.vscode/
+*.log
+audit_logs/
+context.db
+missions_invalid/
