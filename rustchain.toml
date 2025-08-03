@@ -1,0 +1,11 @@
+[endpoints]
+llm = "http://localhost:11434"
+
+[timeouts]
+default = 30
+memory_ttl = 300
+
+[feature_flags]
+tools = true
+rag = true
+memory = true
