@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file tools/migration.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/tools/migration.rs
+
+ERROR:
+
