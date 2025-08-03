@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file core/wasm_executor.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/core/wasm_executor.rs
+
+ERROR:
+
