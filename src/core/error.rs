@@ -1,0 +1,49 @@
+use std::fmt;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum RustChainError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("Configuration error: {0}")]
+    Config(String),
+
+    #[error("LLM error: {0}")]
+    Llm(String),
+
+    #[error("Memory error: {0}")]
+    Memory(String),
+
+    #[error("Tool error: {0}")]
+    Tool(String),
+
+    #[error("Execution error: {0}")]
+    Exec(String),
+
+    #[error("Schema validation failed: {0}")]
+    Schema(String),
+
+    #[error("Unknown error: {0}")]
+    Unknown(String),
+}
+
+pub type Result<T> = std::result::Result<T, RustChainError>;
+
+impl From<anyhow::Error> for RustChainError {
+    fn from(e: anyhow::Error) -> Self {
+        RustChainError::Unknown(e.to_string())
+    }
+}
+
+impl From<String> for RustChainError {
+    fn from(e: String) -> Self {
+        RustChainError::Unknown(e)
+    }
+}
+
+impl From<&str> for RustChainError {
+    fn from(e: &str) -> Self {
+        RustChainError::Unknown(e.to_string())
+    }
+}
