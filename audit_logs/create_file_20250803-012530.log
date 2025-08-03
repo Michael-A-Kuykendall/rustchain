@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file main.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/main.rs
+
+ERROR:
+
