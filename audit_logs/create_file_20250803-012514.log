@@ -1,8 +1,8 @@
 STEP: create_file
-DESC: Create file cli/subcommands/invariant.rs
+DESC: Create file test/mocks.rs
 
 OUTPUT:
-File created: /workspaces/rustchain/cli/subcommands/invariant.rs
+File created: /workspaces/rustchain/test/mocks.rs
 
 ERROR:
 
