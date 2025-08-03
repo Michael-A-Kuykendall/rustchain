@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file tests/integration_end_to_end.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/tests/integration_end_to_end.rs
+
+ERROR:
+
