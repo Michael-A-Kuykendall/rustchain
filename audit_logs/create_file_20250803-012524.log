@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file core/perf.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/core/perf.rs
+
+ERROR:
+
