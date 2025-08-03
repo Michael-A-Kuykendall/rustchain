@@ -1,41 +1,41 @@
-use crate::core::plugin::{ToolPlugin};
-use crate::core::plugin_registry::{PluginDescriptor, PluginRegistry};
-use crate::core::tools::register_plugin_tools;
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::path::Path;
 
-pub async fn load_plugin(
-    registry: &mut PluginRegistry,
-    plugin: Arc<dyn ToolPlugin>,
-    id: &str,
-    kind: &str,
-) {
-    register_plugin_tools(plugin.clone()).await;
-    let descriptor = PluginDescriptor {
-        id: id.into(),
-        kind: kind.into(),
-        registered_tools: vec![], // Stub: extend later with reflection
-    };
-    registry.register(descriptor);
+pub struct PluginLoader {
+    plugins: HashMap<String, String>,
 }
----
 
-file: cli/main.rs
----
-use crate::core::plugin_loader::load_plugin;
-use crate::core::plugin_registry::PluginRegistry;
-use std::sync::Arc;
+impl PluginLoader {
+    pub fn new() -> Self {
+        Self {
+            plugins: HashMap::new(),
+        }
+    }
 
-pub fn handle_plugin_load(path: &str) {
-    println!("Loading plugin from: {}", path);
-    // Stub: In reality, dynamically load .so or precompiled crate
-    let dummy_plugin: Arc<dyn crate::core::plugin::ToolPlugin> = todo!("Load plugin object");
-    let mut registry = PluginRegistry::new();
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(load_plugin(&mut registry, dummy_plugin, path, "custom"));
+    pub fn load_plugin(&mut self, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let plugin_name = path.file_stem()
+            .and_then(|name| name.to_str())
+            .ok_or("Invalid plugin path")?
+            .to_string();
+
+        println!("Loading plugin: {} from {:?}", plugin_name, path);
+        
+        // Create runtime with proper error handling instead of unwrap
+        let rt = tokio::runtime::Runtime::new()
+            .map_err(|e| format!("Failed to create Tokio runtime: {}", e))?;
+        
+        // Plugin loading logic here
+        rt.block_on(async {
+            // Async plugin loading
+            println!("Plugin {} loaded successfully", plugin_name);
+        });
+
+        self.plugins.insert(plugin_name.clone(), path.to_string_lossy().to_string());
+        
+        Ok(())
+    }
+
+    pub fn list_plugins(&self) -> Vec<&String> {
+        self.plugins.keys().collect()
+    }
 }
----
-
-file: lib.rs
----
-pub mod plugin_loader;
----

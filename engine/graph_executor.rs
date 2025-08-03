@@ -22,21 +22,29 @@ impl GraphExecutor {
         self.tasks.insert(task.id.clone(), task);
     }
 
-    pub fn resolve_order(&self) -> Result<Vec<String>, String> {
-        let mut in_degree = HashMap::new();
+    pub fn topological_sort(&self) -> Result<Vec<String>, String> {
+        let mut in_degree: HashMap<String, usize> = self.tasks
+            .keys()
+            .map(|id| (id.clone(), 0))
+            .collect();
+
+        // Calculate in-degrees
         for task in self.tasks.values() {
-            in_degree.entry(task.id.clone()).or_insert(0);
             for dep in &task.depends_on {
-                *in_degree.entry(dep.clone()).or_insert(0) += 1;
+                if !self.tasks.contains_key(dep) {
+                    return Err(format!("Dependency '{}' not found for task '{}'", dep, task.id));
+                }
+                if let Some(degree) = in_degree.get_mut(&task.id) {
+                    *degree += 1;
+                }
             }
         }
 
-        let mut queue = VecDeque::new();
-        for (id, &deg) in &in_degree {
-            if deg == 0 {
-                queue.push_back(id.clone());
-            }
-        }
+        let mut queue: VecDeque<String> = in_degree
+            .iter()
+            .filter(|(_, &degree)| degree == 0)
+            .map(|(id, _)| id.clone())
+            .collect();
 
         let mut order = vec![];
         let mut visited = HashSet::new();
@@ -47,25 +55,26 @@ impl GraphExecutor {
 
             for t in self.tasks.values() {
                 if t.depends_on.contains(&node) {
-                    let entry = in_degree.get_mut(&t.id).unwrap();
-                    *entry -= 1;
-                    if *entry == 0 {
-                        queue.push_back(t.id.clone());
+                    // Safe access instead of unwrap
+                    if let Some(entry) = in_degree.get_mut(&t.id) {
+                        *entry -= 1;
+                        if *entry == 0 {
+                            queue.push_back(t.id.clone());
+                        }
+                    } else {
+                        return Err(format!("Task '{}' missing from in_degree map", t.id));
                     }
                 }
             }
         }
 
         if visited.len() != self.tasks.len() {
-            Err("Cycle detected in task graph".to_string())
+            let unvisited: Vec<_> = self.tasks.keys()
+                .filter(|id| !visited.contains(*id))
+                .collect();
+            Err(format!("Cycle detected in task graph. Unprocessed tasks: {:?}", unvisited))
         } else {
             Ok(order)
         }
     }
 }
----
-
-file: lib.rs
----
-pub mod graph_executor;
----

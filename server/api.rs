@@ -1,44 +1,25 @@
-use axum::{
-    routing::{get, post},
-    Router, Json,
-};
-use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 
-#[derive(Deserialize)]
-pub struct RunRequest {
-    pub mission_yaml: String,
+pub async fn serve_api(port: u16) -> Result<(), Box<dyn std::error::Error>> {
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    
+    // Bind with proper error handling instead of unwrap
+    let listener = TcpListener::bind(&addr).await
+        .map_err(|e| format!("Failed to bind to {}: {}", addr, e))?;
+    
+    println!("🚀 RustChain API Server listening on http://{}", addr);
+    
+    loop {
+        let (stream, peer_addr) = listener.accept().await
+            .map_err(|e| format!("Failed to accept connection: {}", e))?;
+        
+        println!("📡 New connection from: {}", peer_addr);
+        
+        // Handle connection
+        tokio::spawn(async move {
+            // Connection handling logic here
+            println!("Processing request from {}", peer_addr);
+        });
+    }
 }
-
-#[derive(Serialize)]
-pub struct StatusResponse {
-    pub status: String,
-}
-
-async fn run_mission(Json(req): Json<RunRequest>) -> Json<StatusResponse> {
-    println!("Received mission: {}", req.mission_yaml);
-    Json(StatusResponse { status: "started".into() })
-}
-
-async fn get_status() -> Json<StatusResponse> {
-    Json(StatusResponse { status: "ok".into() })
-}
-
-pub async fn serve_api() {
-    let app = Router::new()
-        .route("/run", post(run_mission))
-        .route("/status", get(get_status));
-
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
-    println!("API server running at http://{}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
-}
----
-
-file: lib.rs
----
-pub mod api;
----

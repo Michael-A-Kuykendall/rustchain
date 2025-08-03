@@ -1,70 +1,40 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[clap(name = "rustchain", version = "0.1", author = "RustChain")]
+#[command(name = "rustchain")]
+#[command(about = "RustChain AI Agent System")]
 pub struct Cli {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub command: Commands,
 }
 
 #[derive(Subcommand)]
 pub enum Commands {
+    #[command(about = "Run a mission")]
     Run {
-        #[clap(value_parser)]
+        #[arg(help = "Path to mission file")]
         mission: String,
     },
+    #[command(about = "Check invariants")]
     Invariant,
-    Plugin {
-        #[clap(subcommand)]
-        cmd: PluginCommands,
+    #[command(about = "Start server")]
+    Serve {
+        #[arg(long, default_value = "3000")]
+        port: u16,
     },
-    Api,
+    #[command(subcommand)]
+    Plugin(PluginCommands),
 }
 
 #[derive(Subcommand)]
 pub enum PluginCommands {
+    #[command(about = "List plugins")]
     List,
-    Info {
-        #[clap(value_parser)]
-        id: String,
+    #[command(about = "Load plugin")]
+    Load {
+        #[arg(help = "Plugin path")]
+        path: String,
     },
 }
----
 
-file: cli/main.rs
----
-use crate::cli::commands::{Cli, Commands, PluginCommands};
-use crate::cli::subcommands::invariant::handle_invariant_check;
-use crate::server::api::serve_api;
-use clap::Parser;
-
-pub fn main() {
-    let cli = Cli::parse();
-
-    match cli.command {
-        Commands::Run { mission } => {
-            println!("Running mission: {}", mission);
-        }
-        Commands::Invariant => {
-            handle_invariant_check();
-        }
-        Commands::Plugin { cmd } => match cmd {
-            PluginCommands::List => {
-                println!("Listing plugins...");
-            }
-            PluginCommands::Info { id } => {
-                println!("Plugin info: {}", id);
-            }
-        },
-        Commands::Api => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(serve_api());
-        }
-    }
-}
----
-
-file: lib.rs
----
-pub mod cli;
----
+// Implementation moved to cli/main.rs with proper error handling
