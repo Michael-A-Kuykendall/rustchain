@@ -37,8 +37,7 @@ tasks:
 
                       let mut original = String::new();
                       std::fs::File::open(&task.file)?.read_to_string(&mut original)?;
-                      let merged = format!("{}
-{}", original.trim_end(), task.edit.trim_start());
+                      let merged = format!("{}\n{}", original.trim_end(), task.edit.trim_start());
                       std::fs::write(&task.file, merged)?;
                   }
 
