@@ -427,33 +427,76 @@ def main():
         print(f"❌ Mission file not found: {mission_file}")
         sys.exit(1)
     
+    is_simple_format = False
     try:
+        # First try to read as raw text to handle simple file format
         with open(mission_file, "r", encoding="utf-8") as f:
-            mission_data = yaml.safe_load(f)
+            raw_content = f.read()
+        
+        # Check if it's the simple format (has 'file:' and '---')
+        if raw_content.startswith('#') or 'file:' in raw_content.split('\n')[4:6]:  # file: within first few lines
+            # Parse simple format manually
+            lines = raw_content.split('\n')
+            file_path = None
+            content_start = None
+            
+            for i, line in enumerate(lines):
+                if line.strip().startswith('file:'):
+                    file_path = line.split('file:', 1)[1].strip()
+                elif line.strip() == '---' and file_path:
+                    content_start = i + 1
+                    break
+            
+            if file_path and content_start is not None:
+                content = '\n'.join(lines[content_start:])
+                
+                # Create a single step from this simple format
+                steps = [{
+                    'id': 'create_file',
+                    'type': 'create',
+                    'file_path': file_path,
+                    'content': content,
+                    'description': f"Create file {file_path}"
+                }]
+                mission_block = {
+                    'name': f"Simple file creation: {file_path}",
+                    'description': f"Create {file_path} from simple YAML format"
+                }
+                is_simple_format = True
+            else:
+                raise ValueError("Invalid simple format: missing file or content separator")
+        else:
+            is_simple_format = False
+        
+        # If not simple format, parse as YAML
+        if not is_simple_format:
+            with open(mission_file, "r", encoding="utf-8") as f:
+                mission_data = yaml.safe_load(f)
     except Exception as e:
         print(f"❌ Failed to load mission file: {e}")
         sys.exit(1)
 
-    # Support both schemas: with or without top-level 'mission', and with 'steps' or 'tasks'
-    mission_block = mission_data.get('mission', mission_data)
-    steps = mission_block.get('steps')
-    if steps is None:
-        # Try tasks/op legacy format
-        tasks = mission_block.get('tasks', [])
-        # Convert tasks to steps format
-        steps = []
-        for idx, task in enumerate(tasks):
-            step = dict(task)  # shallow copy
-            # Map 'op' to 'type', 'file' to 'file_path', 'edit' to 'content', etc.
-            if 'op' in step:
-                step['type'] = step.pop('op')
-            if 'file' in step:
-                step['file_path'] = step.pop('file')
-            if 'edit' in step:
-                step['content'] = step.pop('edit')
-            if 'id' not in step:
-                step['id'] = f"step{idx+1}"
-            steps.append(step)
+    if not is_simple_format:
+        # Handle structured formats
+        mission_block = mission_data.get('mission', mission_data)
+        steps = mission_block.get('steps')
+        if steps is None:
+            # Try tasks/op legacy format
+            tasks = mission_block.get('tasks', [])
+            # Convert tasks to steps format
+            steps = []
+            for idx, task in enumerate(tasks):
+                step = dict(task)  # shallow copy
+                # Map 'op' to 'type', 'file' to 'file_path', 'edit' to 'content', etc.
+                if 'op' in step:
+                    step['type'] = step.pop('op')
+                if 'file' in step:
+                    step['file_path'] = step.pop('file')
+                if 'edit' in step:
+                    step['content'] = step.pop('edit')
+                if 'id' not in step:
+                    step['id'] = f"step{idx+1}"
+                steps.append(step)
     approval_steps = set(mission_block.get('require_approval_on', []))
     logs = []
 

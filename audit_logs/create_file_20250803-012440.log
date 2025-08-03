@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file core/sandbox.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/core/sandbox.rs
+
+ERROR:
+
