@@ -1,0 +1,84 @@
+use std::collections::{HashMap, HashSet};
+
+pub struct Role {
+    pub name: String,
+    pub allowed_tools: HashSet<String>,
+}
+
+pub struct RBACManager {
+    pub agent_roles: HashMap<String, String>, // agent_id -> role name
+    pub roles: HashMap<String, Role>,         // role name -> Role
+}
+
+impl RBACManager {
+    pub fn new() -> Self {
+        Self {
+            agent_roles: HashMap::new(),
+            roles: HashMap::new(),
+        }
+    }
+
+    pub fn assign_role(&mut self, agent_id: &str, role_name: &str) {
+        self.agent_roles.insert(agent_id.to_string(), role_name.to_string());
+    }
+
+    pub fn define_role(&mut self, role: Role) {
+        self.roles.insert(role.name.clone(), role);
+    }
+
+    pub fn is_allowed(&self, agent_id: &str, tool: &str) -> bool {
+        if let Some(role_name) = self.agent_roles.get(agent_id) {
+            if let Some(role) = self.roles.get(role_name) {
+                return role.allowed_tools.contains(tool);
+            }
+        }
+        false
+    }
+}
+---
+
+file: engine/context.rs
+---
+use crate::core::rbac::RBACManager;
+
+pub struct RuntimeContext {
+    pub rbac: RBACManager,
+    // existing fields...
+}
+
+impl RuntimeContext {
+    pub fn new() -> Self {
+        Self {
+            rbac: RBACManager::new(),
+            // existing init...
+        }
+    }
+}
+---
+
+file: core/tools.rs
+---
+use crate::engine::context::RuntimeContext;
+
+pub async fn call_tool_secure(
+    ctx: &RuntimeContext,
+    agent_id: &str,
+    tool_name: &str,
+    input: &str
+) -> String {
+    if !ctx.rbac.is_allowed(agent_id, tool_name) {
+        return format!("Access denied to tool: {}", tool_name);
+    }
+
+    if let Some(tool) = get_tool(tool_name).await {
+        tool.call(input).await
+    } else {
+        format!("Tool not found: {}", tool_name)
+    }
+}
+---
+
+file: lib.rs
+---
+pub mod rbac;
+---

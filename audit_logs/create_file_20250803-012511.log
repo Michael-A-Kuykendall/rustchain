@@ -1,0 +1,8 @@
+STEP: create_file
+DESC: Create file core/rbac.rs
+
+OUTPUT:
+File created: /workspaces/rustchain/core/rbac.rs
+
+ERROR:
+
