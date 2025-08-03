@@ -2,7 +2,7 @@ STEP: step1
 DESC: 
 
 OUTPUT:
-File created: /workspaces/rustchain/src/infrastructure/schema.rs
+File created: /workspaces/rustchain/src/infrastructure/bootstrap.rs
 
 ERROR:
 
