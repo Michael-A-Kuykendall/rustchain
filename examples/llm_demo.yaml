@@ -1,0 +1,24 @@
+version: "1.0"
+name: "llm_demo"
+description: "Demo showing LLM integration"
+steps:
+  - id: "ask_llm"
+    name: "Ask LLM a question"
+    step_type: "llm"
+    parameters:
+      prompt: "What is 2+2? Please answer briefly."
+      temperature: 0.1
+      max_tokens: 50
+  
+  - id: "create_response_file"
+    name: "Save LLM response to file"
+    step_type: "create_file"
+    depends_on: ["ask_llm"]
+    parameters:
+      path: "llm_response.txt"
+      content: "LLM answered the question successfully"
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 120
+  fail_fast: true

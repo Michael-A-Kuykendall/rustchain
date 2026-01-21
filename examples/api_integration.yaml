@@ -1,0 +1,64 @@
+name: "API Integration Example"
+description: "HTTP request examples with GET, POST, and error handling"
+version: "1.0"
+
+steps:
+  - id: "test_get"
+    name: "Test GET Request"
+    step_type: "http"
+    parameters:
+      method: "GET"
+      url: "https://httpbin.org/get"
+      headers:
+        Accept: "application/json"
+      timeout_seconds: 30
+      expected_status: 200
+
+  - id: "create_payload"
+    name: "Create POST Payload"
+    step_type: "create_file"
+    parameters:
+      path: "test_payload.json"
+      content: |
+        {
+          "timestamp": "{{ timestamp }}",
+          "data": {"key": "value", "count": 42}
+        }
+
+  - id: "test_post"
+    name: "Test POST Request"
+    step_type: "http"
+    parameters:
+      method: "POST"
+      url: "https://httpbin.org/post"
+      headers:
+        Content-Type: "application/json"
+      body_file: "test_payload.json"
+      timeout_seconds: 30
+      expected_status: 200
+    depends_on: ["create_payload", "test_get"]
+
+  - id: "test_error_handling"
+    name: "Test 404 Handling"
+    step_type: "http"
+    parameters:
+      method: "GET"
+      url: "https://httpbin.org/status/404"
+      timeout_seconds: 15
+      expected_status: 404
+      on_error: "continue"
+    depends_on: ["test_post"]
+
+  - id: "done"
+    name: "Completion Message"
+    step_type: "command"
+    parameters:
+      command: "echo"
+      args: ["API tests completed"]
+    depends_on: ["test_error_handling"]
+    timeout_seconds: 10
+
+config:
+  max_parallel_steps: 2
+  timeout_seconds: 120
+  fail_fast: false

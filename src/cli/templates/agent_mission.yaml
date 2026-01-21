@@ -1,0 +1,28 @@
+name: "{{name}}"
+description: "{{description}}"
+version: "1.0"
+
+steps:
+  - id: "agent_task"
+    step_type: "agent"
+    parameters:
+      agent_type: "research"
+      task: "Research and analyze the topic: {{name}}"
+      tools: ["http", "file_create"]
+      max_iterations: 5
+    
+  - id: "generate_report"
+    step_type: "create_file"
+    parameters:
+      path: "agent_report.md"
+      content: |
+        # Research Report: {{name}}
+        
+        ## Analysis
+        {{ steps.agent_task.analysis }}
+        
+        ## Recommendations
+        {{ steps.agent_task.recommendations }}
+        
+        ## Sources
+        {{ steps.agent_task.sources }}

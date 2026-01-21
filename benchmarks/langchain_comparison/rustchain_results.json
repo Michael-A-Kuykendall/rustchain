@@ -1,0 +1,67 @@
+{
+  "framework": "rustchain",
+  "system": {
+    "timestamp": "2025-12-16T21:46:22.055357400+00:00",
+    "platform": "windows x86_64",
+    "rust_version": "1.70+",
+    "cpu_count": 24,
+    "target": "x86_64"
+  },
+  "benchmarks": [
+    {
+      "iterations": 1000,
+      "max_ms": 0.518,
+      "mean_ms": 0.030254100000000145,
+      "median_ms": 0.0283,
+      "min_ms": 0.0236,
+      "operation": "workflow_parsing",
+      "p95_ms": 0.036000000000000004,
+      "p99_ms": 0.0726,
+      "stdev_ms": 0.02449687408691219,
+      "total_ms": 30.254100000000143
+    },
+    {
+      "iterations": 100,
+      "max_ms": 0.018199999999999997,
+      "mean_ms": 0.001314,
+      "median_ms": 0.0011,
+      "min_ms": 0.001,
+      "operation": "chain_execution",
+      "p95_ms": 0.0015,
+      "p99_ms": 0.018199999999999997,
+      "stdev_ms": 0.0017124629318409472,
+      "total_ms": 0.13140000000000002
+    },
+    {
+      "iterations": 50,
+      "max_ms": 0.8947,
+      "mean_ms": 0.06926,
+      "median_ms": 0.03005,
+      "min_ms": 0.0125,
+      "operation": "parallel_execution",
+      "p95_ms": 0.17340000000000003,
+      "p99_ms": 0.8947,
+      "parallel_tasks": 20,
+      "stdev_ms": 0.1273127436428795,
+      "total_ms": 3.463
+    },
+    {
+      "iterations": 1000,
+      "max_ms": 0.5701,
+      "mean_ms": 0.0925901,
+      "median_ms": 0.06999999999999999,
+      "min_ms": 0.0597,
+      "operation": "memory_operations",
+      "ops_per_iteration": 400,
+      "p95_ms": 0.1632,
+      "p99_ms": 0.2299,
+      "stdev_ms": 0.04481479820470162,
+      "total_ms": 92.59009999999999
+    },
+    {
+      "operation": "llm_chain",
+      "reason": "LLM feature not enabled",
+      "skipped": true
+    }
+  ]
+}

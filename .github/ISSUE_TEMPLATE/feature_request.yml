@@ -1,0 +1,194 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Your ideas help make RustChain better for everyone.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify you've completed these steps
+      options:
+        - label: I searched existing issues and discussions to avoid duplicates
+          required: true
+        - label: I considered if this fits with RustChain's goals and philosophy
+          required: true
+        - label: I'm willing to help implement this feature if possible
+          required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - "🤖 AI/Agent - Agent reasoning, LLM integration"
+        - "🔗 Chain - Mission execution, workflow orchestration"
+        - "🛠️ Tools - New tools or tool framework improvements"
+        - "📊 Performance - Speed, memory, or scalability improvements"
+        - "🛡️ Security - Safety, policy, audit, compliance features"
+        - "📖 Documentation - Docs, examples, tutorials"
+        - "🎨 User Experience - CLI, error messages, usability"
+        - "🏢 Enterprise - RBAC, monitoring, enterprise integrations"
+        - "🔌 Integration - Third-party service integrations"
+        - "📱 Platform - Platform-specific features or improvements"
+        - "🎯 Other - Something else entirely"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What pain point are you experiencing?
+      placeholder: |
+        I'm trying to [accomplish some goal] but I can't because [current limitation].
+        This is frustrating because [impact on workflow/productivity].
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal solution to this problem
+      placeholder: |
+        I would like RustChain to support [specific feature] that would allow me to [accomplish goal].
+        This could work by [high-level implementation approach].
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_cases
+    attributes:
+      label: Use Cases
+      description: Describe specific use cases where this feature would be valuable
+      placeholder: |
+        1. When building AI agents for customer support, I need...
+        2. For enterprise deployments, this would enable...  
+        3. Data processing workflows would benefit by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example Usage
+      description: Show how you envision using this feature (pseudocode, YAML, CLI commands, etc.)
+      placeholder: |
+        ```yaml
+        # Mission file example
+        name: "Feature Demo"
+        steps:
+          - id: "use_new_feature" 
+            step_type: "new_feature_type"
+            parameters:
+              setting: "value"
+        ```
+        
+        ```bash
+        # CLI example
+        cargo run --bin rustchain -- new-command --option value
+        ```
+      render: markdown
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you and your use case?
+      options:
+        - "🔥 Critical - Blocking major use case"
+        - "⚠️ High - Would significantly improve workflow"
+        - "📋 Medium - Nice to have, would use regularly"
+        - "📝 Low - Interesting idea, might use occasionally"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What alternatives have you considered? How do other tools solve this?
+      placeholder: |
+        - I tried using [existing feature/tool] but it doesn't work because...
+        - LangChain has [similar feature] but it lacks...
+        - I could work around this by [manual process] but it's inefficient because...
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Ideas
+      description: Do you have ideas about how this could be implemented? (Optional but helpful)
+      placeholder: |
+        This could potentially be implemented by:
+        1. Adding a new step type to the mission engine
+        2. Creating a new trait in the tools framework  
+        3. Extending the agent reasoning system
+        
+        Key considerations:
+        - Performance impact should be minimal
+        - Should integrate cleanly with existing features
+        - Needs proper error handling and validation
+
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility Considerations
+      description: How should this feature interact with existing functionality?
+      options:
+        - label: Should be backward compatible with existing missions
+        - label: Should work with all existing LLM providers
+        - label: Should respect existing safety and policy settings
+        - label: Should integrate with the audit system
+        - label: Should work across all platforms (Windows/Linux/macOS)
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Implementation Complexity (Your Estimate)
+      description: How complex do you think this feature would be to implement?
+      options:
+        - "🟢 Low - Small addition to existing system"
+        - "🟡 Medium - New component but follows existing patterns"
+        - "🟠 High - Requires significant new architecture"
+        - "🔴 Very High - Major system changes required"
+        - "❓ Unknown - Not sure about implementation complexity"
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Any other context, mockups, links, or information that would be helpful
+      placeholder: |
+        - Related to similar feature request #123
+        - Inspired by [external tool/paper/standard]
+        - Would complement existing feature X
+        - Screenshot of desired UI/output
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Willingness
+      description: How would you like to help with this feature?
+      options:
+        - label: I'm willing to implement this feature myself
+        - label: I can help with design and requirements gathering
+        - label: I can help with testing once implemented
+        - label: I can provide domain expertise and feedback
+        - label: I can help with documentation once complete
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Timeline
+      description: When do you need this feature? Any specific deadlines or milestones?
+      placeholder: |
+        - Would like to have this for our Q2 project
+        - No specific timeline, whenever it's ready
+        - Critical for upcoming product launch in [month]

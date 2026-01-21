@@ -1,0 +1,16 @@
+name: "{{name}}"
+description: "{{description}}"
+version: "1.0"
+
+steps:
+  - id: "step1"
+    step_type: "create_file"
+    parameters:
+      path: "output.txt"
+      content: "Hello from RustChain mission: {{name}}"
+    
+  - id: "step2"
+    step_type: "command"
+    parameters:
+      command: "echo"
+      args: ["Mission completed successfully!"]

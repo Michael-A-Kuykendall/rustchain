@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4a4a0026f9003e4e31ac0b8ad28c747b1e18e8f8edf246a732f0a352a0c9cfd4 # shrinks to use_cli = true, use_transpiler = false
+cc 16dc6059ce1c4f2476ab3f278292eb96c798d6eda009e8767e0d67a860c998e4 # shrinks to use_cli = true, use_transpiler = false
+cc 2c4361ee018fe40c64ba8fbd08a2ebb57c5baf156f09236bd3a65eb230115b89 # shrinks to use_cli = true, use_transpiler = false
+cc 62caab844f834f1c4a54289a15b253ee5f3eff6e2a6d307648a7d5da0b49d25c # shrinks to use_cli = false, use_transpiler = true
+cc e7847291e232070b4a193b7a96a37d076ac4298ca0d9975f50918ba438a5550b # shrinks to use_cli = true, use_transpiler = true
+cc ba40ab9619c99decf8222c763f1cefa667ede20ad72b1aa5d93317eba572ec84 # shrinks to use_cli = false, use_transpiler = true

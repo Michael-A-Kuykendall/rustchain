@@ -1,0 +1,76 @@
+# Rust
+/target/
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Logs
+*.log
+logs/
+
+# Runtime
+*.pid
+*.seed
+*.tmp
+
+# Configuration (may contain secrets)
+rustchain.toml
+.env
+*.key
+*.pem
+
+# Test artifacts
+/test-output/
+/coverage/
+tarpaulin-report.html
+
+# Mission outputs
+/mission-outputs/
+/sandbox/
+
+# Documentation build
+/book/
+/target/doc/
+
+# Temporary files
+*.temp
+*.bak
+.cache/
+
+# Website development (git-ignored local copy of rust-chain-forge)
+/website/
+
+# Internal business documents (not for public release)
+INTERNAL_MARKETPLACE_PLAN.md
+docs/internal/
+internal_docs/
+models/
+.internal/
+temp/
+
+# Audit archives and backups
+*.tar.gz
+*.zip
+
+# Test output files at root
+greeting.txt
+hello_rustchain.txt
+test_file.txt
+test_output.txt
+
+# Demo/promo directories
+gif_demo/
+feature_registry/
+
+# AI workspace files
+.specify/

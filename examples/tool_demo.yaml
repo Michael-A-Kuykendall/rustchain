@@ -1,0 +1,35 @@
+version: "1.0"
+name: "tool_demo"
+description: "Demo showing tool execution capabilities"
+steps:
+  - id: "create_with_tool"
+    name: "Create file using tool"
+    step_type: "tool"
+    parameters:
+      tool: "create_file"
+      parameters:
+        path: "tool_created.txt"
+        content: "This file was created using the create_file tool!"
+  
+  - id: "http_with_tool"
+    name: "Make HTTP request using tool"
+    step_type: "tool"
+    depends_on: ["create_with_tool"]
+    parameters:
+      tool: "http"
+      parameters:
+        url: "https://httpbin.org/json"
+        method: "GET"
+  
+  - id: "final_message"
+    name: "Final completion message"
+    step_type: "create_file"
+    depends_on: ["http_with_tool"]
+    parameters:
+      path: "demo_complete.txt"
+      content: "Tool demo completed successfully!"
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 60
+  fail_fast: true

@@ -1,0 +1,44 @@
+name: "Data Processing Pipeline"
+description: "CSV data loading and processing example"
+version: "1.0"
+
+steps:
+  - id: "create_data"
+    name: "Create Sample CSV"
+    step_type: "create_file"
+    parameters:
+      path: "sales_data.csv"
+      content: |
+        date,product,sales,region
+        2024-01-01,Widget A,1500,North
+        2024-01-01,Widget B,2300,South
+        2024-01-02,Widget A,1750,North
+        2024-01-02,Widget B,2100,South
+        2024-01-03,Widget A,1900,North
+        2024-01-03,Widget B,2450,South
+
+  - id: "load_csv"
+    name: "Load CSV Data"
+    step_type: "tool"
+    parameters:
+      tool: "csv_loader"
+      parameters:
+        file_path: "sales_data.csv"
+        delimiter: ","
+        has_headers: true
+    depends_on: ["create_data"]
+    timeout_seconds: 30
+
+  - id: "done"
+    name: "Pipeline Complete"
+    step_type: "command"
+    parameters:
+      command: "echo"
+      args: ["Data processing completed - 6 records loaded"]
+    depends_on: ["load_csv"]
+    timeout_seconds: 10
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 60
+  fail_fast: true

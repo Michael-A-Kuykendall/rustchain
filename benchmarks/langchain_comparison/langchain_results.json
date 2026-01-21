@@ -1,0 +1,67 @@
+{
+  "framework": "langchain",
+  "system": {
+    "timestamp": "2025-12-16T15:56:20.523115",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 33 Stepping 0, AuthenticAMD",
+    "python_version": "3.13.7",
+    "cpu_count": 24
+  },
+  "benchmarks": [
+    {
+      "operation": "workflow_parsing",
+      "iterations": 1000,
+      "total_ms": 1365.8520000753924,
+      "mean_ms": 1.3658520000753924,
+      "median_ms": 1.335550012299791,
+      "stdev_ms": 0.11646627473714459,
+      "min_ms": 1.2675999896600842,
+      "max_ms": 2.2745999740436673,
+      "p95_ms": 1.587499980814755,
+      "p99_ms": 1.9128000130876899
+    },
+    {
+      "operation": "chain_execution",
+      "iterations": 100,
+      "total_ms": 53.6826002644375,
+      "mean_ms": 0.536826002644375,
+      "median_ms": 0.48144999891519547,
+      "stdev_ms": 0.1433738348048832,
+      "min_ms": 0.4496999899856746,
+      "max_ms": 1.270500011742115,
+      "p95_ms": 0.8781000506132841,
+      "p99_ms": 1.270500011742115
+    },
+    {
+      "operation": "parallel_execution",
+      "parallel_tasks": 20,
+      "iterations": 50,
+      "total_ms": 450.2894001780078,
+      "mean_ms": 9.005788003560156,
+      "median_ms": 9.01099995826371,
+      "stdev_ms": 0.2749479720920687,
+      "min_ms": 8.407099987380207,
+      "max_ms": 9.650500025600195,
+      "p95_ms": 9.443400020245463,
+      "p99_ms": 9.650500025600195
+    },
+    {
+      "operation": "memory_operations",
+      "ops_per_iteration": 400,
+      "iterations": 1000,
+      "total_ms": 82.42640097159892,
+      "mean_ms": 0.08242640097159892,
+      "median_ms": 0.0773999490775168,
+      "stdev_ms": 0.025958110667863465,
+      "min_ms": 0.07539999205619097,
+      "max_ms": 0.46549999387934804,
+      "p95_ms": 0.09889999637380242,
+      "p99_ms": 0.1577999792061746
+    },
+    {
+      "operation": "llm_chain",
+      "skipped": true,
+      "reason": "--no-llm flag set"
+    }
+  ]
+}

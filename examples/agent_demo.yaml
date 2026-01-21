@@ -1,0 +1,31 @@
+version: "1.0"
+name: "agent_demo"
+description: "Demo showcasing autonomous agent capabilities"
+steps:
+  - id: "simple_agent"
+    name: "Run simple reasoning agent"
+    step_type: "agent"
+    parameters:
+      name: "ReasoningAgent"
+      objective: "Analyze the benefits and drawbacks of renewable energy"
+  
+  - id: "problem_solver"
+    name: "Problem-solving agent"
+    step_type: "agent"
+    depends_on: ["simple_agent"]
+    parameters:
+      name: "ProblemSolver"
+      objective: "Create a step-by-step plan for reducing household energy consumption"
+  
+  - id: "save_results"
+    name: "Save agent outputs to file"
+    step_type: "create_file"
+    depends_on: ["problem_solver"]
+    parameters:
+      path: "agent_results.txt"
+      content: "Agent demo completed - results saved to context variables"
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 180
+  fail_fast: true

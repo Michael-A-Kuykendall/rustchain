@@ -1,0 +1,18 @@
+name: "{{name}}"
+description: "{{description}}"
+version: "1.0"
+
+steps:
+  - id: "llm_task"
+    step_type: "llm"
+    parameters:
+      provider: "ollama"
+      model: "phi3:mini"
+      prompt: "Please analyze the following task and provide recommendations: {{name}}"
+      max_tokens: 500
+    
+  - id: "save_results"
+    step_type: "create_file"
+    parameters:
+      path: "llm_analysis.txt"
+      content: "{{ steps.llm_task.output }}"

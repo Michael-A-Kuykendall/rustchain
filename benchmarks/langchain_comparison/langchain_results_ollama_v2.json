@@ -1,0 +1,137 @@
+{
+  "framework": "langchain",
+  "backend": "ollama",
+  "model": "phi3",
+  "config": {
+    "temperature": 0.0,
+    "max_tokens": 100,
+    "max_retries": 0
+  },
+  "system": {
+    "timestamp": "2025-12-17T11:52:29.173180",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 33 Stepping 0, AuthenticAMD",
+    "python_version": "3.13.7",
+    "cpu_count": 24
+  },
+  "benchmarks": [
+    {
+      "operation": "workflow_parsing",
+      "iterations": 1000,
+      "total_ms": 1239.2653000015343,
+      "mean_ms": 1.2392653000015343,
+      "median_ms": 1.235149999956775,
+      "stdev_ms": 0.025124205294812955,
+      "min_ms": 1.2008000001060282,
+      "max_ms": 1.7505000000710425,
+      "p95_ms": 1.2643000000025495,
+      "p99_ms": 1.2882999999419553
+    },
+    {
+      "operation": "chain_execution",
+      "iterations": 100,
+      "total_ms": 43.71800000035364,
+      "mean_ms": 0.4371800000035364,
+      "median_ms": 0.4292999999506719,
+      "stdev_ms": 0.04537375650398496,
+      "min_ms": 0.42159999998148123,
+      "max_ms": 0.8451000001059583,
+      "p95_ms": 0.4556999999749678,
+      "p99_ms": 0.8451000001059583
+    },
+    {
+      "operation": "large_dag",
+      "iterations": 100,
+      "total_ms": 225.07740000105514,
+      "mean_ms": 2.2507740000105514,
+      "median_ms": 2.159699999992881,
+      "stdev_ms": 0.18320560597079924,
+      "min_ms": 2.085800000031668,
+      "max_ms": 3.190099999983431,
+      "p95_ms": 2.688300000045274,
+      "p99_ms": 3.190099999983431
+    },
+    {
+      "operation": "tool_dispatch",
+      "iterations": 500,
+      "total_ms": 42.251699999724224,
+      "mean_ms": 0.08450339999944845,
+      "median_ms": 0.08329999991474324,
+      "stdev_ms": 0.005083070297758672,
+      "min_ms": 0.08139999999912106,
+      "max_ms": 0.14199999986885814,
+      "p95_ms": 0.09000000000014552,
+      "p99_ms": 0.1133000000663742
+    },
+    {
+      "operation": "parallel_execution",
+      "iterations": 50,
+      "total_ms": 498.2521000003999,
+      "mean_ms": 9.965042000007998,
+      "median_ms": 10.0038499999755,
+      "stdev_ms": 0.20350945631797385,
+      "min_ms": 9.57620000008319,
+      "max_ms": 10.4326000000583,
+      "p95_ms": 10.2795000000242,
+      "p99_ms": 10.4326000000583,
+      "parallel_tasks": 20
+    },
+    {
+      "operation": "memory_operations",
+      "iterations": 1000,
+      "total_ms": 74.658199997657,
+      "mean_ms": 0.074658199997657,
+      "median_ms": 0.07389999996121333,
+      "stdev_ms": 0.003684827093734057,
+      "min_ms": 0.07159999995565158,
+      "max_ms": 0.1303999999890948,
+      "p95_ms": 0.07799999980306893,
+      "p99_ms": 0.09260000001631852,
+      "ops_per_iteration": 400
+    },
+    {
+      "operation": "single_prompt",
+      "iterations": 10,
+      "total_ms": 3461.673100000098,
+      "mean_ms": 346.1673100000098,
+      "median_ms": 102.40680000003977,
+      "stdev_ms": 761.8652353731668,
+      "min_ms": 71.40010000011898,
+      "max_ms": 2513.5801999999785,
+      "p95_ms": 2513.5801999999785,
+      "p99_ms": 2513.5801999999785,
+      "avg_response_chars": 48.4,
+      "max_response_chars": 83
+    },
+    {
+      "operation": "multi_turn_chat",
+      "iterations": 5,
+      "total_ms": 93960.59740000032,
+      "mean_ms": 18792.119480000067,
+      "median_ms": 22463.523700000223,
+      "stdev_ms": 8591.955993702728,
+      "min_ms": 3428.700499999877,
+      "max_ms": 22916.07430000022,
+      "p95_ms": 22916.07430000022,
+      "p99_ms": 22916.07430000022,
+      "turns_per_conversation": 5,
+      "avg_response_chars": 1728.64,
+      "max_response_chars": 4046
+    },
+    {
+      "operation": "parallel_inference",
+      "iterations": 5,
+      "total_ms": 7210.960099999738,
+      "mean_ms": 1442.1920199999477,
+      "median_ms": 1344.9129999999059,
+      "stdev_ms": 700.9002212865148,
+      "min_ms": 821.0530999999719,
+      "max_ms": 2595.827599999893,
+      "p95_ms": 2595.827599999893,
+      "p99_ms": 2595.827599999893,
+      "parallel_calls": 3,
+      "avg_response_chars": 173,
+      "max_response_chars": 268
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+#!/bin/bash
+# RustChain Community — Pre-Commit Hook
+# Catches known defect classes before they make it upstream
+# Install: git config core.hooksPath .githooks
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "🔍 Running pre-commit defect class checks..."
+
+FAILED=0
+
+# ==============================================================================
+# 0. FORMATTING — cargo fmt check (fast)
+# ==============================================================================
+echo -n "  Checking cargo fmt... "
+if cargo fmt --check --quiet 2>/dev/null; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${RED}✗ BLOCKED: Run 'cargo fmt' to fix${NC}"
+    FAILED=1
+fi
+
+# ==============================================================================
+# 1. PANIC SURFACES — No unwrap/expect in non-test production code
+# ==============================================================================
+echo -n "  Checking for unwrap()/expect() in src/... "
+
+# Exclude test modules, test files, and documented safety patterns
+# Uses awk to properly detect test module scope (not just grep line-by-line)
+UNWRAP_HITS=$(find src -name "*.rs" ! -path "*/tests/*" ! -name "*_test.rs" \
+    -exec awk 'BEGIN{in_test=0} /^#\[cfg\(test\)\]|^mod tests/{in_test=1} !in_test && /\.(unwrap|expect)\(/' {} \; 2>/dev/null \
+    | grep -v '// SAFETY:' \
+    | grep -v '^\s*///' \
+    | grep -v '^\s*//!' \
+    | grep -v 'expect(".*regex' \
+    | grep -v 'expect(".*pattern' \
+    | grep -v 'expect(".*selector' \
+    | grep -v 'expect(".*guarantees' \
+    | grep -v 'expect("Failed to build HTTP' \
+    | grep -v 'expect("System clock' \
+    | grep -v 'expect("Static' \
+    | grep -v 'expect("Numeric' \
+    | grep -v 'expect(".*non-empty' \
+    | grep -v 'expect(".*set when' \
+    | grep -v '#\[allow(clippy::unwrap_used)\]' \
+    | grep -v '#\[allow(clippy::expect_used)\]' \
+    | wc -l)
+
+if [ "$UNWRAP_HITS" -gt 0 ]; then
+    echo -e "${YELLOW}⚠ $UNWRAP_HITS occurrences (review needed)${NC}"
+    # Don't fail — informational only
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 2. HTTP CLIENTS — Must use builder with timeout, not Client::new()
+# ==============================================================================
+echo -n "  Checking for reqwest::Client::new()... "
+
+# Exclude comments (lines starting with // or ///) 
+CLIENT_NEW_HITS=$(grep -rn --include="*.rs" 'reqwest::Client::new()' src/ 2>/dev/null \
+    | grep -v '^\s*//' \
+    | grep -v ':.*//.*reqwest::Client::new()' \
+    | wc -l)
+
+if [ "$CLIENT_NEW_HITS" -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: $CLIENT_NEW_HITS occurrences${NC}"
+    echo "    Use reqwest::Client::builder().timeout(...).build() instead"
+    grep -rn --include="*.rs" 'reqwest::Client::new()' src/ 2>/dev/null | grep -v '^\s*//' | grep -v ':.*//.*reqwest::Client::new()' | head -5
+    FAILED=1
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 3. UNBOUNDED READS — No .text().await without size cap
+# ==============================================================================
+echo -n "  Checking for unbounded response.text().await... "
+
+# Pattern: response.text().await followed by unwrap_or_default (silent failure + unbounded)
+UNBOUNDED_HITS=$(grep -rn --include="*.rs" -E '\.text\(\)\.await.*unwrap_or_default' src/ 2>/dev/null | wc -l)
+
+if [ "$UNBOUNDED_HITS" -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: $UNBOUNDED_HITS occurrences${NC}"
+    echo "    Use bounded body reads with explicit size cap"
+    grep -rn --include="*.rs" -E '\.text\(\)\.await.*unwrap_or_default' src/ 2>/dev/null | head -5
+    FAILED=1
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 4. PANIC MACRO — No panic!() in production code (excluding test code)
+# ==============================================================================
+echo -n "  Checking for panic!() in src/... "
+
+# Strategy: Find files with panic!, exclude assertion macros and test code
+# Excluded: invariants.rs (assertion macro), test modules, test files
+
+PANIC_HITS=0
+PANIC_FILES=""
+
+for file in $(grep -rl --include="*.rs" 'panic!' src/ 2>/dev/null | grep -v 'invariants.rs' | grep -v '_test.rs'); do
+    # Get line number of first test marker (mod tests or #[cfg(test)])
+    TEST_LINE=$(grep -n -m1 -E '(mod tests|#\[cfg\(test\)\])' "$file" 2>/dev/null | cut -d: -f1)
+    
+    if [ -z "$TEST_LINE" ]; then
+        # No test marker - count all panics (excluding SAFETY: comments)
+        COUNT=$(grep 'panic!' "$file" 2>/dev/null | grep -v 'SAFETY:' | wc -l)
+    else
+        # Count panics only before test section
+        COUNT=$(head -n $((TEST_LINE - 1)) "$file" 2>/dev/null | grep 'panic!' | grep -v 'SAFETY:' | wc -l)
+    fi
+    
+    # Ensure COUNT is a valid integer
+    COUNT=$(echo "$COUNT" | tr -d '[:space:]')
+    
+    if [ -n "$COUNT" ] && [ "$COUNT" -gt 0 ]; then
+        PANIC_HITS=$((PANIC_HITS + COUNT))
+        PANIC_FILES="$PANIC_FILES $file"
+    fi
+done
+
+if [ "$PANIC_HITS" -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: $PANIC_HITS occurrences${NC}"
+    echo "    Return Result::Err instead of panicking"
+    # Show first 5 examples
+    for file in $PANIC_FILES; do
+        TEST_LINE=$(grep -n -m1 -E '(mod tests|#\[cfg\(test\)\])' "$file" 2>/dev/null | cut -d: -f1)
+        if [ -z "$TEST_LINE" ]; then
+            grep -n 'panic!' "$file" 2>/dev/null | grep -v 'SAFETY:' | head -2 | sed "s|^|$file:|"
+        else
+            head -n $((TEST_LINE - 1)) "$file" 2>/dev/null | grep -n 'panic!' | grep -v 'SAFETY:' | head -2 | sed "s|^|$file:|"
+        fi
+    done | head -5
+    FAILED=1
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 5. SILENT IO FAILURE — No unwrap_or_default on file reads
+# ==============================================================================
+echo -n "  Checking for silent file read failures... "
+
+SILENT_READ_HITS=$(grep -rn --include="*.rs" -E 'read_to_string.*unwrap_or_default' src/ 2>/dev/null | wc -l)
+
+if [ "$SILENT_READ_HITS" -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: $SILENT_READ_HITS occurrences${NC}"
+    echo "    Propagate errors explicitly; handle NotFound separately if needed"
+    grep -rn --include="*.rs" -E 'read_to_string.*unwrap_or_default' src/ 2>/dev/null | head -5
+    FAILED=1
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 6. VERSION DRIFT — Cargo.toml version must match any hardcoded versions
+# ==============================================================================
+echo -n "  Checking for version string drift... "
+
+CARGO_VERSION=$(grep -E '^version\s*=' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+HARDCODED_VERSIONS=$(grep -rn --include="*.rs" -E 'version\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"' src/ 2>/dev/null \
+    | grep -v "CARGO_PKG_VERSION" \
+    | grep -v "$CARGO_VERSION" \
+    | wc -l)
+
+if [ "$HARDCODED_VERSIONS" -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: Hardcoded version != Cargo.toml ($CARGO_VERSION)${NC}"
+    grep -rn --include="*.rs" -E 'version\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"' src/ 2>/dev/null \
+        | grep -v "CARGO_PKG_VERSION" \
+        | grep -v "$CARGO_VERSION"
+    FAILED=1
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 7. AI REMNANTS — No "Claude Code" references
+# ==============================================================================
+echo -n "  Checking for AI remnant comments... "
+
+AI_REFS=$(grep -rn --include="*.rs" -i "claude code" src/ 2>/dev/null | wc -l)
+
+if [ "$AI_REFS" -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: $AI_REFS 'Claude Code' references${NC}"
+    grep -rn --include="*.rs" -i "claude code" src/ 2>/dev/null | head -5
+    FAILED=1
+else
+    echo -e "${GREEN}✓${NC}"
+fi
+
+# ==============================================================================
+# 8. CLIPPY — Rust's built-in lint engine (the big hammer)
+# ==============================================================================
+echo -n "  Running cargo clippy (quick)... "
+
+# Run clippy with key safety lints, fail on warnings
+# Use --quiet to reduce noise, only show errors
+if cargo clippy --all-features --quiet -- \
+    -D clippy::panic \
+    -D clippy::todo \
+    -D clippy::unimplemented \
+    -D clippy::dbg_macro \
+    2>/dev/null; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${RED}✗ BLOCKED: clippy found issues${NC}"
+    echo "    Run 'cargo clippy --all-features' to see details"
+    FAILED=1
+fi
+
+# ==============================================================================
+# SUMMARY
+# ==============================================================================
+echo ""
+if [ "$FAILED" -eq 1 ]; then
+    echo -e "${RED}❌ Pre-commit checks FAILED${NC}"
+    echo "   Fix the issues above before committing."
+    echo "   To bypass (emergencies only): git commit --no-verify"
+    exit 1
+else
+    echo -e "${GREEN}✅ Pre-commit checks passed${NC}"
+    exit 0
+fi

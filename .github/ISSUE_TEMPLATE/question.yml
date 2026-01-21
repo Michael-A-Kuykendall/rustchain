@@ -1,0 +1,176 @@
+name: ❓ Question / Help
+description: Ask a question or get help with using RustChain
+title: "[Question]: "
+labels: ["question", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help with RustChain? We're here to help! Please provide as much context as possible so we can give you the best answer.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please check these first to see if your question is already answered
+      options:
+        - label: I checked the README and examples directory
+          required: true
+        - label: I searched existing issues and discussions
+          required: true
+        - label: I looked at the documentation in the docs/ directory
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What area does your question relate to?
+      options:
+        - "🚀 Getting Started - Installation, basic setup, first steps"
+        - "🎯 Mission Creation - Writing and structuring mission files"
+        - "🤖 AI/Agents - Agent configuration, LLM integration, reasoning"
+        - "🔗 Chains - Chain execution, step dependencies, workflows"
+        - "🛠️ Tools - Using built-in tools, creating custom tools"
+        - "🏢 Enterprise - Security, compliance, policy configuration"
+        - "📊 Performance - Optimization, benchmarking, scaling"
+        - "🔧 Configuration - Settings, feature flags, environment setup"
+        - "🐛 Troubleshooting - Debugging issues, error understanding"
+        - "🎯 Use Cases - Best practices for specific scenarios"
+        - "💡 Architecture - Understanding RustChain's design"
+        - "🤝 Contributing - How to contribute code or documentation"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know? Be as specific as possible.
+      placeholder: |
+        I'm trying to [accomplish specific goal] and I'm wondering [specific question].
+        
+        For example:
+        - How do I configure RustChain to use multiple LLM providers in the same mission?
+        - What's the best way to handle errors in a multi-step chain?
+        - How can I create a custom tool that interacts with my company's API?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Background
+      description: Help us understand your situation and what you're trying to achieve
+      placeholder: |
+        I'm building [type of application/system] and I need to [high-level goal].
+        My use case involves [relevant details about your scenario].
+        I'm coming from [previous experience with similar tools, if any].
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What Have You Tried?
+      description: What approaches have you already attempted?
+      placeholder: |
+        I tried:
+        1. Following the example in [specific example file]
+        2. Reading the documentation for [specific feature]
+        3. Searching for [specific terms] but couldn't find...
+        
+        The results were: [what happened when you tried these approaches]
+
+  - type: textarea
+    id: code_example
+    attributes:
+      label: Code Example (if applicable)
+      description: Share relevant mission files, configurations, or code you're working with
+      placeholder: |
+        ```yaml
+        # My current mission file
+        name: "My Mission"
+        version: "1.0"
+        steps:
+          - id: "step1"
+            step_type: "llm"
+            parameters:
+              # This is where I'm stuck...
+        ```
+        
+        ```bash
+        # Command I'm running
+        cargo run --bin rustchain -- run my-mission.yaml
+        ```
+      render: markdown
+
+  - type: textarea
+    id: error_output
+    attributes:
+      label: Error Messages or Logs (if applicable)
+      description: If you're getting errors, please paste them here
+      placeholder: |
+        ```
+        Error: Mission validation failed
+        [2024-01-01T12:00:00Z ERROR rustchain::engine] Step validation error: ...
+        ```
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Information
+      description: Your system setup (if relevant to the question)
+      placeholder: |
+        - OS: Windows 11 / macOS 14 / Ubuntu 22.04
+        - Rust Version: 1.75.0
+        - RustChain Features: agent,chain,tools,llm
+        - LLM Provider: OpenAI GPT-4 / Anthropic Claude / Ollama
+      render: markdown
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency Level
+      description: How urgent is getting an answer to this question?
+      options:
+        - "🔥 Urgent - Blocking critical work"
+        - "⚠️ Important - Needed for current project"
+        - "📋 Normal - General curiosity or future planning"
+        - "📝 Low - Just exploring possibilities"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_outcome
+    attributes:
+      label: Expected Outcome
+      description: What would a successful answer look like? What would you be able to do after getting help?
+      placeholder: |
+        After getting help, I should be able to:
+        - Successfully run my mission with the desired behavior
+        - Understand how to configure [specific feature]
+        - Know the best practices for [specific use case]
+
+  - type: checkboxes
+    id: help_type
+    attributes:
+      label: Type of Help Needed
+      description: What kind of assistance would be most helpful?
+      options:
+        - label: Step-by-step instructions or tutorial
+        - label: Working code example I can modify
+        - label: Conceptual explanation of how something works
+        - label: Pointer to relevant documentation or resources
+        - label: Best practices and recommendations
+        - label: Troubleshooting guidance for specific error
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional Information
+      description: Anything else that might be relevant or helpful to know?
+      placeholder: |
+        - This is for a [personal project / work project / research / learning]
+        - I have [beginner / intermediate / advanced] experience with Rust
+        - I'm familiar with [other AI frameworks / tools] if that helps with analogies
+        - Timeline: I need to figure this out by [date] for [reason]

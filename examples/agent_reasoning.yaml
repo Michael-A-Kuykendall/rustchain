@@ -1,0 +1,40 @@
+name: "Agent Reasoning Demo"
+description: "Autonomous agent with ReAct pattern for problem solving"
+version: "1.0"
+
+steps:
+  - id: "setup_problem"
+    name: "Set Up Problem Context"
+    step_type: "create_file"
+    parameters:
+      path: "agent_problem.txt"
+      content: |
+        SCENARIO: Simple Data Analysis
+        
+        Goal: Analyze sales data and identify the top-performing product.
+        Data format: CSV with columns (date, product, sales, region)
+        Constraints: Use only safe file operations
+
+  - id: "run_agent"
+    name: "Run Reasoning Agent"
+    step_type: "agent"
+    parameters:
+      name: "AnalysisAgent"
+      objective: "Read the problem context and create an analysis plan."
+      max_iterations: 3
+      context_file: "agent_problem.txt"
+    depends_on: ["setup_problem"]
+    timeout_seconds: 60
+
+  - id: "save_result"
+    name: "Save Agent Output"
+    step_type: "create_file"
+    parameters:
+      path: "agent_output.txt"
+      content: "Agent reasoning complete. Check context for results."
+    depends_on: ["run_agent"]
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 120
+  fail_fast: false

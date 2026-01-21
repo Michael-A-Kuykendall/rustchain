@@ -1,0 +1,107 @@
+name: 🔍 Automatic Issue Deduplication
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  models: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect-duplicates:
+    if: ${{ github.event.issue.user.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Check for duplicate issues
+        uses: pelikhan/action-genai-issue-dedup@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Compare within similar labeled issues for better accuracy
+          labels: "auto"  
+          # Check last 50 issues for thorough duplicate detection
+          count: "50"
+          # Look back 180 days to catch older duplicates
+          since: "180d"
+          
+      - name: 📝 Add helpful context comment
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // If deduplication action fails, add a helpful comment
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: `👋 Thank you for your issue! 
+              
+              Our automated duplicate detection couldn't run properly, but don't worry - 
+              our maintainers will review this manually. 
+              
+              To help us process your issue faster:
+              - ✅ Check if this might be similar to existing issues
+              - ✅ Include clear reproduction steps if it's a bug
+              - ✅ Provide your environment details (OS, Rust version, RustChain features)
+              
+              We appreciate your contribution to RustChain! 🦀`
+            });
+
+  categorize-issue:
+    runs-on: ubuntu-latest
+    needs: detect-duplicates
+    if: always()  # Run even if duplicate detection fails
+    steps:
+      - name: 🏷️ Smart issue categorization  
+        uses: actions/ai-inference@v1
+        id: categorize
+        with:
+          prompt: |
+            Analyze this RustChain issue and suggest appropriate labels. 
+            
+            Title: ${{ github.event.issue.title }}
+            Body: ${{ github.event.issue.body }}
+            
+            Available labels:
+            - bug, enhancement, documentation, question, help-wanted
+            - priority-low, priority-medium, priority-high, priority-critical  
+            - area-agent, area-chain, area-tools, area-llm, area-security, area-performance
+            - good-first-issue, needs-triage, needs-reproduction
+            
+            Respond with a JSON array of 2-4 most relevant labels.
+            Example: ["bug", "area-agent", "priority-medium", "needs-reproduction"]
+          system-prompt: |
+            You are a helpful issue triage assistant for RustChain, an AI orchestration framework in Rust.
+            Focus on accuracy and be conservative with priority labels.
+          model: openai/gpt-4o-mini
+          temperature: 0.2
+          
+      - name: 🏷️ Apply suggested labels
+        if: steps.categorize.outputs.response != ''
+        uses: actions/github-script@v7  
+        with:
+          script: |
+            try {
+              const labels = JSON.parse('${{ steps.categorize.outputs.response }}');
+              if (Array.isArray(labels) && labels.length > 0) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo, 
+                  issue_number: ${{ github.event.issue.number }},
+                  labels: labels
+                });
+                console.log('Applied labels:', labels);
+              }
+            } catch (error) {
+              console.log('Could not parse label suggestions:', error);
+              // Fall back to basic triage label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.issue.number }},
+                labels: ['needs-triage']
+              });
+            }

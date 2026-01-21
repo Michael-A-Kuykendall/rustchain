@@ -1,0 +1,126 @@
+{
+  "framework": "rustchain",
+  "backend": "ollama",
+  "model": "phi3",
+  "system": {
+    "timestamp": "2025-12-16T22:26:53.846651700+00:00",
+    "platform": "windows x86_64",
+    "rust_version": "1.70+",
+    "cpu_count": 24,
+    "target": "x86_64"
+  },
+  "benchmarks": [
+    {
+      "iterations": 1000,
+      "max_ms": 0.3475,
+      "mean_ms": 0.037800400000000026,
+      "median_ms": 0.0386,
+      "min_ms": 0.0234,
+      "operation": "workflow_parsing",
+      "p95_ms": 0.047599999999999996,
+      "p99_ms": 0.08009999999999999,
+      "stdev_ms": 0.018953705252081513,
+      "total_ms": 37.800400000000025
+    },
+    {
+      "iterations": 100,
+      "max_ms": 0.0066,
+      "mean_ms": 0.0010960000000000008,
+      "median_ms": 0.001,
+      "min_ms": 0.0009,
+      "operation": "chain_execution",
+      "p95_ms": 0.0013,
+      "p99_ms": 0.0066,
+      "stdev_ms": 0.0006813415168814114,
+      "total_ms": 0.10960000000000009
+    },
+    {
+      "iterations": 100,
+      "max_ms": 0.7736000000000001,
+      "mean_ms": 0.099261,
+      "median_ms": 0.08545,
+      "min_ms": 0.0196,
+      "operation": "large_dag",
+      "p95_ms": 0.1706,
+      "p99_ms": 0.7736000000000001,
+      "stdev_ms": 0.08486664749815298,
+      "total_ms": 9.9261
+    },
+    {
+      "iterations": 500,
+      "max_ms": 0.0009,
+      "mean_ms": 0.00007279999999999995,
+      "median_ms": 0.00009999999999999999,
+      "min_ms": 0.0,
+      "operation": "tool_dispatch",
+      "p95_ms": 0.00009999999999999999,
+      "p99_ms": 0.00009999999999999999,
+      "stdev_ms": 0.00005922140110380205,
+      "total_ms": 0.036399999999999974
+    },
+    {
+      "iterations": 50,
+      "max_ms": 0.1603,
+      "mean_ms": 0.035184,
+      "median_ms": 0.0207,
+      "min_ms": 0.0103,
+      "operation": "parallel_execution",
+      "p95_ms": 0.1482,
+      "p99_ms": 0.1603,
+      "parallel_tasks": 20,
+      "stdev_ms": 0.03683179837353277,
+      "total_ms": 1.7591999999999999
+    },
+    {
+      "iterations": 1000,
+      "max_ms": 0.7861,
+      "mean_ms": 0.09163029999999993,
+      "median_ms": 0.06875,
+      "min_ms": 0.0594,
+      "operation": "memory_operations",
+      "ops_per_iteration": 400,
+      "p95_ms": 0.158,
+      "p99_ms": 0.2382,
+      "stdev_ms": 0.04655883070510498,
+      "total_ms": 91.63029999999993
+    },
+    {
+      "iterations": 10,
+      "max_ms": 446.4116,
+      "mean_ms": 154.81835,
+      "median_ms": 118.3975,
+      "min_ms": 90.193,
+      "operation": "single_prompt",
+      "p95_ms": 446.4116,
+      "p99_ms": 446.4116,
+      "stdev_ms": 105.32615172126849,
+      "total_ms": 1548.1835
+    },
+    {
+      "iterations": 5,
+      "max_ms": 3701.7718,
+      "mean_ms": 3620.7910599999996,
+      "median_ms": 3627.7146,
+      "min_ms": 3542.6397,
+      "operation": "multi_turn_chat",
+      "p95_ms": 3701.7718,
+      "p99_ms": 3701.7718,
+      "stdev_ms": 57.17632311383792,
+      "total_ms": 18103.955299999998,
+      "turns_per_conversation": 5
+    },
+    {
+      "iterations": 5,
+      "max_ms": 3007.7232999999997,
+      "mean_ms": 1589.3968399999999,
+      "median_ms": 1442.2478,
+      "min_ms": 870.9219,
+      "operation": "parallel_inference",
+      "p95_ms": 3007.7232999999997,
+      "p99_ms": 3007.7232999999997,
+      "parallel_calls": 3,
+      "stdev_ms": 843.9015745671041,
+      "total_ms": 7946.9842
+    }
+  ]
+}

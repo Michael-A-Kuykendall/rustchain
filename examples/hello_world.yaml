@@ -1,0 +1,37 @@
+name: "Hello World - Your First RustChain Mission"
+description: "A simple introduction to RustChain's mission system"
+version: "1.0"
+
+steps:
+  - id: "welcome_message"
+    name: "Create Welcome File"
+    step_type: "create_file"
+    parameters:
+      path: "hello_rustchain.txt"
+      content: |
+        🚀 Welcome to RustChain!
+        
+        This file was created by your first mission.
+        Mission executed at: {{ timestamp }}
+        
+        RustChain Features Demonstrated:
+        ✅ Mission execution
+        ✅ File operations  
+        ✅ Variable substitution
+        ✅ Multi-step workflows
+        
+        Next: Try the data processing example!
+    
+  - id: "confirmation"
+    name: "Display Success Message"
+    step_type: "command"
+    parameters:
+      command: "echo"
+      args: ["🎉 Hello World mission completed successfully! Check hello_rustchain.txt"]
+    depends_on: ["welcome_message"]
+    timeout_seconds: 10
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 60
+  fail_fast: true

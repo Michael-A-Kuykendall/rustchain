@@ -1,0 +1,226 @@
+name: 🧹 Continuous Issue Resolution
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  issues: write
+  pull-requests: write
+  models: read
+
+jobs:
+  identify-resolved-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Find potentially resolved issues
+        uses: actions/github-script@v7
+        id: find-issues
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'bug,needs-reproduction,question',
+              per_page: 50
+            });
+            
+            // Focus on issues older than 30 days with no recent activity
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const staleCandidates = issues.filter(issue => {
+              const lastActivity = new Date(issue.updated_at);
+              return lastActivity < thirtyDaysAgo;
+            });
+            
+            console.log(`Found ${staleCandidates.length} potentially stale issues`);
+            return staleCandidates.map(issue => ({
+              number: issue.number,
+              title: issue.title,
+              body: issue.body,
+              labels: issue.labels.map(l => l.name),
+              updated_at: issue.updated_at
+            }));
+
+      - name: 🤖 Analyze issue resolution status
+        if: fromJSON(steps.find-issues.outputs.result).length > 0
+        uses: actions/ai-inference@v1
+        id: analyze
+        with:
+          prompt: |
+            Analyze these RustChain GitHub issues to determine if they might be resolved or outdated:
+            
+            Issues: ${{ steps.find-issues.outputs.result }}
+            
+            For each issue, consider:
+            - Has this likely been fixed in recent RustChain updates?
+            - Is this a duplicate of known resolved issues?
+            - Is this question likely answered in current documentation?
+            - Is this feature request already implemented?
+            - Does this appear to be resolved based on the description?
+            
+            For issues that seem resolved/outdated, respond with:
+            {
+              "action": "close",
+              "issue_number": 123,
+              "reason": "Brief explanation of why this appears resolved"
+            }
+            
+            For issues that need follow-up, respond with:
+            {
+              "action": "comment", 
+              "issue_number": 123,
+              "message": "Friendly message asking for status update"
+            }
+            
+            For issues that seem active/valid, respond with:
+            {
+              "action": "keep",
+              "issue_number": 123
+            }
+            
+            Return a JSON array of objects. Be conservative - when in doubt, use "comment" or "keep".
+          system-prompt: |
+            You are a helpful issue triage assistant for RustChain.
+            Be conservative about closing issues - prefer asking for updates over closing.
+            Focus on obvious cases where issues are clearly outdated or resolved.
+          model: openai/gpt-4o-mini
+          temperature: 0.2
+
+      - name: 📝 Process analysis results
+        if: steps.analyze.outputs.response != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const results = JSON.parse(`${{ steps.analyze.outputs.response }}`);
+              
+              for (const result of results) {
+                const { action, issue_number, reason, message } = result;
+                
+                switch (action) {
+                  case 'close':
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number,
+                      body: `🤖 **Automated Resolution Check**
+
+This issue appears to be resolved or outdated: ${reason}
+
+If this issue is still relevant, please:
+- ✅ Confirm you can still reproduce it with the latest RustChain version
+- ✅ Provide updated reproduction steps if needed  
+- ✅ Add any new information that might be helpful
+
+**Closing this issue to keep our backlog clean.** Feel free to reopen if it's still valid! 🚀`
+                    });
+                    
+                    await github.rest.issues.update({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number,
+                      state: 'closed',
+                      state_reason: 'not_planned'
+                    });
+                    
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number,
+                      labels: ['auto-resolved']
+                    });
+                    break;
+                    
+                  case 'comment':
+                    await github.rest.issues.createComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number,
+                      body: `👋 **Status Check**
+
+${message}
+
+To help us keep our issues organized:
+- ✅ Is this still relevant with the current version of RustChain?
+- ✅ Have you found a solution or workaround?
+- ✅ Would you like to continue working on this?
+
+If there's no response in 14 days, we may close this issue to keep our backlog manageable. Thanks! 🦀`
+                    });
+                    
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number,
+                      labels: ['stale', 'awaiting-response']
+                    });
+                    break;
+                    
+                  case 'keep':
+                    // Just log that we're keeping it active
+                    console.log(`Keeping issue ${issue_number} active`);
+                    break;
+                }
+              }
+            } catch (error) {
+              console.error('Error processing analysis results:', error);
+            }
+
+  clean-up-truly-stale:
+    runs-on: ubuntu-latest
+    needs: identify-resolved-issues
+    steps:
+      - name: 🗑️ Close issues with no response after stale warning
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find issues labeled as stale for more than 14 days
+            const { data: staleIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'stale,awaiting-response',
+              per_page: 50
+            });
+            
+            const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+            
+            for (const issue of staleIssues) {
+              const lastActivity = new Date(issue.updated_at);
+              
+              if (lastActivity < fourteenDaysAgo) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `🕐 **Auto-closing due to inactivity**
+
+This issue has been marked as stale for 14+ days with no response. 
+
+**This doesn't mean it's not valuable!** If you're still interested:
+- 🔓 Feel free to reopen this issue
+- 💬 Add new information or updates  
+- 🎯 Reference it in new related issues
+
+Thanks for helping keep RustChain's issue tracker organized! 🚀`
+                });
+                
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'not_planned'
+                });
+                
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: ['auto-closed-stale']
+                });
+                
+                console.log(`Closed stale issue #${issue.number}`);
+              }
+            }

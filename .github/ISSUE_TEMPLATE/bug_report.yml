@@ -1,0 +1,144 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report this bug! Please provide as much detail as possible to help us reproduce and fix the issue.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify you've completed these steps
+      options:
+        - label: I searched existing issues to avoid duplicates
+          required: true
+        - label: I'm using a supported Rust version (1.70+)
+          required: true
+        - label: I can reproduce this bug consistently
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: When I run [specific command/operation], I expected [X] to happen, but [Y] happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Please provide detailed steps to reproduce the behavior
+      placeholder: |
+        1. Clone the repository
+        2. Run `cargo build --features "agent,llm"`
+        3. Execute `cargo run --bin rustchain -- run examples/example.yaml`
+        4. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: The mission should complete successfully and create the output file.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include error messages, logs, or screenshots
+      placeholder: |
+        Error: Mission failed with status code 1
+        [error logs here]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Bug Severity
+      description: How severe is this bug?
+      options:
+        - "🔥 Critical - System crashes or data loss"
+        - "⚠️ High - Major feature broken"
+        - "📋 Medium - Minor feature issue"
+        - "📝 Low - Cosmetic or documentation"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Information
+      description: Please provide details about your environment
+      placeholder: |
+        - OS: Windows 11 / macOS 14 / Ubuntu 22.04
+        - Rust Version: `rustc --version`
+        - RustChain Version: `cargo run --bin rustchain -- --version`
+        - Features Enabled: agent,chain,tools,llm
+        - LLM Provider: OpenAI / Anthropic / Ollama
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: mission_file
+    attributes:
+      label: Mission File (if applicable)
+      description: If the bug relates to a specific mission, please paste the YAML content
+      placeholder: |
+        ```yaml
+        name: "Bug Reproduction Mission"
+        version: "1.0"
+        steps:
+          - id: "failing_step"
+            step_type: "create_file"
+            # ... rest of mission
+        ```
+      render: yaml
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log Output
+      description: Relevant log output or error messages (set RUST_LOG=debug for detailed logs)
+      placeholder: |
+        ```
+        [2024-01-01T12:00:00Z INFO rustchain::cli::handlers] Executing mission: examples/bug.yaml
+        [2024-01-01T12:00:00Z ERROR rustchain::engine] Mission failed: ...
+        ```
+      render: shell
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround (if any)
+      description: If you found a workaround, please share it to help others
+      placeholder: I was able to work around this by modifying the mission file to...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or information that might be relevant
+      placeholder: This started happening after upgrading from version X to Y...
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help fix this bug?
+      options:
+        - label: I'm willing to submit a PR to fix this bug
+        - label: I can help with testing a fix
+        - label: I can provide more information if needed

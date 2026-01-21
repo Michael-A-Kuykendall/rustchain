@@ -1,0 +1,159 @@
+name: 📋 Issue Completeness Check
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  models: read
+
+jobs:
+  check-completeness:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.user.type != 'Bot' }}
+    steps:
+      - name: 🔍 Analyze issue completeness
+        uses: actions/ai-inference@v1
+        id: analyze
+        with:
+          prompt: |
+            Analyze this RustChain GitHub issue for completeness and helpfulness.
+            
+            Title: ${{ github.event.issue.title }}
+            Body: ${{ github.event.issue.body }}
+            
+            For BUG REPORTS, check for:
+            - Clear problem description
+            - Steps to reproduce  
+            - Expected vs actual behavior
+            - Environment info (OS, Rust version, RustChain version/features)
+            - Error messages or logs
+            
+            For FEATURE REQUESTS, check for:
+            - Clear problem statement
+            - Proposed solution
+            - Use cases and examples
+            - Implementation considerations
+            
+            For QUESTIONS, check for:
+            - Specific question being asked
+            - Context about what they're trying to achieve  
+            - What they've already tried
+            
+            If the issue is COMPLETE and helpful:
+            - Respond with "COMPLETE"
+            
+            If the issue is INCOMPLETE:
+            - Respond with friendly guidance on what's missing
+            - Be encouraging and helpful, not demanding
+            - Mention RustChain-specific details when relevant
+            - Include links to examples or documentation if helpful
+          system-prompt: |
+            You are a helpful GitHub issue assistant for RustChain, an AI orchestration framework in Rust.
+            Be friendly, encouraging, and specific. Help users provide the information needed to resolve their issues quickly.
+          model: openai/gpt-4o-mini
+          temperature: 0.3
+
+      - name: 📝 Comment with guidance if incomplete
+        if: steps.analyze.outputs.response != 'COMPLETE'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = `${{ steps.analyze.outputs.response }}`;
+            if (response && response.trim() !== '' && response !== 'COMPLETE') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.issue.number }},
+                body: `👋 Thank you for your issue!
+
+${response}
+
+**Quick Resources:**
+- 📖 [Examples](https://github.com/Michael-A-Kuykendall/rustchain/tree/main/examples) - Sample missions and use cases
+- 🛠️ [Contributing Guide](https://github.com/Michael-A-Kuykendall/rustchain/blob/main/CONTRIBUTING.md) - Detailed setup instructions  
+- 💬 [Discussions](https://github.com/Michael-A-Kuykendall/rustchain/discussions) - Community Q&A
+
+We appreciate your contribution to RustChain! 🦀`
+              });
+            }
+
+      - name: 🏷️ Add completeness labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = `${{ steps.analyze.outputs.response }}`;
+            const labels = [];
+            
+            if (response === 'COMPLETE') {
+              labels.push('ready-for-review');
+            } else if (response && response.trim() !== '') {
+              labels.push('needs-more-info');
+            } else {
+              labels.push('needs-triage');
+            }
+            
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.issue.number }},
+                labels: labels
+              });
+            }
+
+  check-environment-info:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.user.type != 'Bot' }}
+    steps:
+      - name: 🖥️ Check for environment information
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueBody = `${{ github.event.issue.body }}`;
+            const title = `${{ github.event.issue.title }}`;
+            
+            // Check if this looks like a bug report or technical issue
+            const isTechnicalIssue = /\b(bug|error|fail|crash|issue|problem|not work|broken)\b/i.test(title + ' ' + issueBody);
+            
+            if (isTechnicalIssue) {
+              const hasRustVersion = /rust|rustc|cargo/i.test(issueBody);
+              const hasOSInfo = /windows|linux|macos|ubuntu|debian/i.test(issueBody);
+              const hasRustChainVersion = /rustchain|version/i.test(issueBody);
+              
+              if (!hasRustVersion || !hasOSInfo || !hasRustChainVersion) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.issue.number }},
+                  body: `🔧 **Environment Information Needed**
+
+To help us diagnose this issue, could you please provide:
+
+\`\`\`bash
+# Get your environment info
+rustc --version
+cargo --version  
+cargo run --bin rustchain -- --version
+
+# Your system
+uname -a  # Linux/macOS
+# or
+systeminfo | findstr /B /C:"OS Name" /C:"OS Version"  # Windows
+\`\`\`
+
+**Also helpful:**
+- Which RustChain features are you using? (e.g., \`agent\`, \`chain\`, \`tools\`, \`llm\`)
+- Are you using any LLM providers? (OpenAI, Anthropic, Ollama, etc.)
+
+This helps us reproduce the issue and provide better support! 🚀`
+                });
+                
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ github.event.issue.number }},
+                  labels: ['needs-environment-info']
+                });
+              }
+            }

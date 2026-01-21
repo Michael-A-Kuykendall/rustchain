@@ -1,0 +1,31 @@
+version: "1.0"
+name: "chain_demo"
+description: "Demo showcasing chain execution capabilities"
+steps:
+  - id: "llm_chain"
+    name: "Run LLM chain"
+    step_type: "chain"
+    parameters:
+      type: "sequential"
+      prompt: "Write a brief summary of the importance of artificial intelligence in modern technology"
+  
+  - id: "followup_chain"
+    name: "Follow-up chain"
+    step_type: "chain"
+    depends_on: ["llm_chain"]
+    parameters:
+      type: "sequential"
+      prompt: "Based on the previous discussion about AI, list 3 specific applications in healthcare"
+  
+  - id: "save_chain_results"
+    name: "Save chain outputs"
+    step_type: "create_file"
+    depends_on: ["followup_chain"]
+    parameters:
+      path: "chain_results.txt"
+      content: "Chain demo completed - check context variables for detailed results"
+
+config:
+  max_parallel_steps: 1
+  timeout_seconds: 150
+  fail_fast: true

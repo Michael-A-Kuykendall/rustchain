@@ -1,0 +1,187 @@
+name: 🛡️ Spam and Low-Quality Content Detection
+on:
+  pull_request:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  issues: write
+  models: read
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.sender.type != 'Bot' }}
+    steps:
+      - name: 🔍 Analyze content quality
+        uses: actions/ai-inference@v1
+        id: analyze
+        with:
+          prompt: |
+            Analyze this GitHub ${{ github.event_name == 'issues' && 'issue' || 'pull request' }} for spam, AI-generated low-quality content, or other problematic content.
+            
+            Title: ${{ github.event.issue.title || github.event.pull_request.title }}
+            Body: ${{ github.event.issue.body || github.event.pull_request.body }}
+            Author: ${{ github.event.sender.login }}
+            
+            Look for:
+            - Obvious spam (irrelevant links, promotional content, repetitive text)
+            - AI-generated slop (generic, template-like content with no real value)
+            - Offensive or inappropriate content  
+            - Completely off-topic content unrelated to RustChain
+            - Duplicate/repetitive submissions from same user
+            
+            Be CONSERVATIVE - only flag obvious cases. When in doubt, choose "ok".
+            
+            Respond with exactly one word:
+            - "spam" - Obvious spam or promotional content
+            - "ai-slop" - Low-quality AI-generated content with no value
+            - "inappropriate" - Offensive or inappropriate content
+            - "off-topic" - Completely unrelated to RustChain/AI/Rust
+            - "ok" - Appears legitimate, even if low quality
+          system-prompt: |
+            You are a content moderator for RustChain, an open source AI orchestration framework.
+            Be very conservative - only flag obvious spam or inappropriate content.
+            Genuine questions, feature requests, and bug reports should always be marked "ok".
+          model: openai/gpt-4o-mini
+          temperature: 0.1
+
+      - name: 🏷️ Apply quality labels
+        if: steps.analyze.outputs.response != 'ok'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const quality = `${{ steps.analyze.outputs.response }}`.trim().toLowerCase();
+            const number = ${{ github.event.issue.number || github.event.pull_request.number }};
+            
+            const labelMap = {
+              'spam': 'spam',
+              'ai-slop': 'ai-generated', 
+              'inappropriate': 'inappropriate-content',
+              'off-topic': 'off-topic'
+            };
+            
+            const label = labelMap[quality];
+            if (label) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: number,
+                labels: [label, 'needs-moderation']
+              });
+              
+              console.log(`Applied labels: ${label}, needs-moderation`);
+            }
+
+      - name: 📝 Add moderation comment for flagged content
+        if: steps.analyze.outputs.response != 'ok'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const quality = `${{ steps.analyze.outputs.response }}`.trim().toLowerCase();
+            const number = ${{ github.event.issue.number || github.event.pull_request.number }};
+            const type = ${{ github.event_name == 'issues' && '"issue"' || '"pull request"' }};
+            
+            let message = '';
+            
+            switch(quality) {
+              case 'spam':
+                message = `🛡️ This ${type} has been flagged as potential spam and will be reviewed by maintainers.
+                
+If this is a mistake, please reply with clarification about how this relates to RustChain.`;
+                break;
+                
+              case 'ai-slop':
+                message = `🤖 This ${type} appears to be AI-generated with minimal effort or value.
+
+If you're genuinely interested in contributing to RustChain:
+- Please provide specific, actionable feedback or questions
+- Share your actual use case or experience  
+- Review our [Contributing Guide](../CONTRIBUTING.md) for meaningful ways to help
+
+Quality contributions are always welcome! 🦀`;
+                break;
+                
+              case 'inappropriate':
+                message = `⚠️ This ${type} has been flagged for inappropriate content and will be reviewed by maintainers.
+
+Please keep all interactions professional and respectful. See our [Code of Conduct](../CODE_OF_CONDUCT.md).`;
+                break;
+                
+              case 'off-topic':  
+                message = `📍 This ${type} appears to be unrelated to RustChain, AI orchestration, or Rust development.
+
+For RustChain-specific questions:
+- 📖 Check our [Documentation](../README.md)
+- 💬 Visit [Discussions](../../discussions) for general questions
+- 🐛 Use Issues for bugs and feature requests only
+
+Thanks for understanding! 🚀`;
+                break;
+            }
+            
+            if (message) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: number,
+                body: message
+              });
+            }
+
+  check-contributor-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👋 Welcome first-time contributors  
+        if: github.event_name == 'pull_request' && github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+        uses: actions/ai-inference@v1
+        id: welcome
+        with:
+          prompt: |
+            Generate a friendly, encouraging welcome message for a first-time contributor to RustChain.
+            
+            PR Title: ${{ github.event.pull_request.title }}
+            
+            Include:
+            - Thank them for their first contribution
+            - Mention checking our CONTRIBUTING.md guide
+            - Offer help if they have questions
+            - Keep it brief, friendly, and encouraging
+            - Reference RustChain's mission (AI orchestration in Rust)
+            
+            Make it feel personal and genuine, not robotic.
+          system-prompt: |
+            You write welcoming messages for new contributors to open source projects.
+            Be warm, encouraging, and helpful without being overly enthusiastic.
+          model: openai/gpt-4o-mini
+          temperature: 0.7
+
+      - name: 📝 Post welcome message
+        if: steps.welcome.outputs.response != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const welcomeMessage = `${{ steps.welcome.outputs.response }}`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              body: `${welcomeMessage}
+
+**Quick Resources:**
+- 📖 [Contributing Guide](../CONTRIBUTING.md) - Setup and development workflow
+- 🎯 [Examples](../examples/) - Sample missions and patterns
+- 💬 [Discussions](../../discussions) - Questions and community chat
+
+We're excited to have you as part of the RustChain community! 🦀✨`
+            });
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              labels: ['first-time-contributor', 'welcome']
+            });

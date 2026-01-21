@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Run tests
+      run: cargo test --all-features --verbose
+      
+    - name: Check formatting
+      run: cargo fmt -- --check
+      
+    - name: Run clippy
+      run: cargo clippy --all-features -- -D warnings
+      
+    - name: Check compilation
+      run: cargo check --all-features
+      
+  build:
+    name: Build Binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Build release
+      run: cargo build --release --all-features
+      
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: rustchain-${{ matrix.os }}
+        path: |
+          target/release/rustchain*
+          !target/release/rustchain.d
+          !target/release/rustchain-*.d
+        if-no-files-found: error
+        
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Security audit
+      run: |
+        cargo install cargo-audit
+        cargo audit
+        
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Install cargo-tarpaulin
+      run: cargo install cargo-tarpaulin
+      
+    - name: Generate coverage report
+      run: cargo tarpaulin --all-features --out xml --output-dir coverage
+      
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/cobertura.xml
+        fail_ci_if_error: false

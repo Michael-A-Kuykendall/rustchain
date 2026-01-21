@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/Michael-A-Kuykendall/rustchain/discussions
+    about: Ask questions, share ideas, and discuss RustChain with the community
+  - name: 📖 Documentation
+    url: https://github.com/Michael-A-Kuykendall/rustchain/blob/main/README.md
+    about: Read the documentation, examples, and guides
+  - name: 🚀 Examples
+    url: https://github.com/Michael-A-Kuykendall/rustchain/tree/main/examples
+    about: Browse example missions and use cases
+  - name: 🛡️ Security Issues
+    url: https://github.com/Michael-A-Kuykendall/rustchain/blob/main/SECURITY.md
+    about: Report security vulnerabilities privately
