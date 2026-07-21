@@ -1,6 +1,6 @@
 # Sponsors
 
-Thank you to all sponsors who help keep RustChain free forever!
+Thank you to all our sponsors who help keep RustChain free forever!
 
 ## Current Sponsors
 
@@ -8,24 +8,26 @@ Thank you to all sponsors who help keep RustChain free forever!
 *Be the first!*
 
 ### Corporate Backers ($100+/month)
-*None yet*
+
+[![ZephyrCloudIO](https://github.com/ZephyrCloudIO.png?size=80)](https://github.com/ZephyrCloudIO)
+
+**[ZephyrCloudIO](https://github.com/ZephyrCloudIO)** - Corporate Backer (joined December 25th, 2025)
 
 ### Developer Supporters ($25+/month)
-*None yet*
+*Be the first!*
 
 ### Coffee Heroes ($5+/month)
-*None yet*
+- alistairheath
 
 ## Why Sponsor?
 
 **RustChain is free forever.** No paid tiers, no enterprise upsells, no bait-and-switch.
 
 Your sponsorship helps:
-- Maintain cross-platform compatibility (Windows, macOS, Linux)
 - Fix bugs faster with dedicated support
 - Improve documentation and examples
-- Add new features (more LLM providers, tools, integrations)
-- Expand test coverage
+- Add new features
+- Expand test coverage across more platforms
 
 ## Sponsorship Tiers
 
